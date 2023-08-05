@@ -1,0 +1,17 @@
+[package]
+name = "template-frontend"
+version = "0.1.0"
+edition = "2021"
+
+[profile.release]
+# Reduces the binary size of the WASM file.
+lto = true
+opt-level="z"
+
+[dependencies]
+# In-House deps
+template-model = { path = "../model" }
+
+# Replace this with the UI crate of your choice
+yew = { version = "0.20", features = ["csr"] }
+yew-router = { version = "0.17.0" }

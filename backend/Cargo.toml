@@ -1,0 +1,14 @@
+[package]
+name = "template-backend"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# In-house deps
+template-model = { path = "../model" }
+
+# Standard deps
+axum = "0.6.18"
+shuttle-axum = "0.21.0"
+shuttle-runtime = "0.21.0"
+tokio = "1.28.2"
