@@ -1,5 +1,5 @@
 [package]
-name = "template-frontend"
+name = "avid-rustacean-frontend"
 version = "0.1.0"
 edition = "2021"
 
@@ -10,7 +10,7 @@ opt-level="z"
 
 [dependencies]
 # In-House deps
-template-model = { path = "../model" }
+avid-rustacean-model = { path = "../model" }
 
 # Replace this with the UI crate of your choice
 yew = { version = "0.20", features = ["csr"] }
