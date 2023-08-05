@@ -1,41 +1,33 @@
-use axum::{routing::get, Router, response::{Response, Html}, http::header, body::{Bytes, Body}};
+use avid_rustacean_model::api::{BLOG_API, BLOG_POST_API};
+use axum::{
+    routing::{get, patch, post, put},
+    Router,
+};
+
+mod assets;
+mod blog;
+mod projects;
+mod state;
+
+use assets::*;
+use blog::*;
+use mongodb::Database;
+use state::*;
 
 #[shuttle_runtime::main]
-async fn axum() -> shuttle_axum::ShuttleAxum {
+async fn axum(#[shuttle_shared_db::MongoDb] db_conn: Database) -> shuttle_axum::ShuttleAxum {
+    let state = AppState::new(db_conn).await;
+
     let router = Router::new()
+        .route(BLOG_API.as_str(), get(get_summary_pager))
+        .route(BLOG_POST_API.as_str(), get(get_post))
+        .route(BLOG_POST_API.as_str(), post(create_post))
+        .route(BLOG_POST_API.as_str(), patch(publish_post))
+        .route(BLOG_POST_API.as_str(), put(update_post))
         .route("/", get(landing))
-        .route("/hourglass-frontend_bg.wasm", get(get_wasm))
-        .route("/hourglass-frontend.js", get(get_js));
+        .route("/avid-rustacean-frontend_bg.wasm", get(get_wasm))
+        .route("/avid-rustacean-frontend.js", get(get_js))
+        .with_state(state);
 
     Ok(router.into())
-}
-
-/* Bundle the frontend assets into the binary */
-const INDEX_HTML: &str = include_str!("../../assets/index.html");
-const APP_WASM: &[u8] = include_bytes!("../../assets/hourglass-frontend_bg.wasm");
-const APP_JS: &str = include_str!("../../assets/hourglass-frontend.js");
-
-/* Methods to get frontend assets */
-pub async fn landing() -> Html<&'static str> {
-    Html(INDEX_HTML)
-}
-
-pub async fn get_wasm() -> Response<Body> {
-    let bytes = Bytes::from_static(APP_WASM);
-    let body: Body = bytes.into();
-
-    Response::builder()
-        .header(header::CONTENT_TYPE, "application/wasm")
-        .body(body)
-        .unwrap()
-}
-
-pub async fn get_js() -> Response<Body> {
-    let bytes = Bytes::from_static(APP_JS.as_bytes());
-    let body: Body = bytes.into();
-
-    Response::builder()
-        .header(header::CONTENT_TYPE, "application/javascript;charset=utf-8")
-        .body(body)
-        .unwrap()
 }

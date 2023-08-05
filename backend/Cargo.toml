@@ -1,14 +1,20 @@
 [package]
-name = "template-backend"
+name = "avid-rustacean-backend"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 # In-house deps
-template-model = { path = "../model" }
+avid-rustacean-model = { path = "../model" }
 
 # Standard deps
-axum = "0.6.18"
-shuttle-axum = "0.21.0"
-shuttle-runtime = "0.21.0"
-tokio = "1.28.2"
+axum = { version = "0.6", features = ["macros"] }
+shuttle-runtime = { version = "0.21", features = [] }
+shuttle-axum = { version = "0.21", features = [] }
+shuttle-shared-db = { version = "0.21", features = ["mongodb"] }
+tokio = { version = "1.28", features = ["sync"] }
+serde = { version = "1.0" }
+serde_json = { version = "1.0" }
+uuid = { version = "1.0", feature = ["v4"] }
+mongodb = { version = "2.3", features = ["tokio-runtime"] }
+futures = { version = "0.3" }
