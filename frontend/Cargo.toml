@@ -11,7 +11,12 @@ opt-level="z"
 [dependencies]
 # In-House deps
 avid-rustacean-model = { path = "../model" }
+ratatui = { version = "0.24.0", default-features = false, features = ["all-widgets"] }
 
 # Replace this with the UI crate of your choice
 yew = { version = "0.20", features = ["csr"] }
 yew-router = { version = "0.17.0" }
+web-sys = { version = "0.3", features = ["Window", "Screen"] }
+wasm-bindgen = { version = "0.2" }
+js-sys = { version = "0.3" }
+send_wrapper = "0.6.0"

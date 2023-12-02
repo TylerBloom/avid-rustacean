@@ -15,5 +15,5 @@ Cargo.lock
 
 assets/*
 
-squire_web/dist/*
-squire_web/target
+frontend/dist/*
+frontend/target
