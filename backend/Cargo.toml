@@ -4,17 +4,15 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-# In-house deps
-avid-rustacean-model = { path = "../model" }
-
 # Standard deps
 axum = { version = "0.6", features = ["macros"] }
-shuttle-runtime = { version = "0.21", features = [] }
-shuttle-axum = { version = "0.21", features = [] }
-shuttle-shared-db = { version = "0.21", features = ["mongodb"] }
+shuttle-runtime = { version = "0.31", features = [] }
+shuttle-shared-db = { version = "0.31", features = ["mongodb"] }
+shuttle-axum = { version = "0.31", features = [] }
 tokio = { version = "1.28", features = ["sync"] }
 serde = { version = "1.0" }
 serde_json = { version = "1.0" }
 uuid = { version = "1.0", feature = ["v4"] }
 mongodb = { version = "2.3", features = ["tokio-runtime"] }
 futures = { version = "0.3" }
+troupe = "0.1.0"
