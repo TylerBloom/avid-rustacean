@@ -6,13 +6,18 @@ use std::{
     sync::{Mutex, OnceLock, MutexGuard},
 };
 
-use posts::PostViewer;
+use posts::Post;
 use ratatui::prelude::Terminal;
 use send_wrapper::SendWrapper;
 use terminal::WebTerm;
 
 pub mod posts;
 pub mod terminal;
+pub mod palette;
+pub mod app;
+pub mod home;
+pub mod project;
+pub mod blog;
 
 pub static TERMINAL: Renderer = Renderer::new();
 
@@ -65,5 +70,5 @@ fn main() {
     // Load the webterm "terminal" and ratatui renderer
     TERMINAL.load();
     // Render the app
-    yew::Renderer::<PostViewer>::new().render();
+    yew::Renderer::<Post>::new().render();
 }
