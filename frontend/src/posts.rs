@@ -10,11 +10,11 @@ pub struct Post {
 }
 
 impl Post {
-    pub fn create(map: &mut CursorMap) -> Self {
+    pub fn create(name: String, map: &mut CursorMap) -> Self {
         todo!()
     }
 
-    pub fn draw(&self, frame: &mut Frame) {
+    pub fn draw(&self, frame: &mut Frame) -> Rect {
         todo!()
     }
 }

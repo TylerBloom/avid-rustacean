@@ -6,10 +6,13 @@ use std::{
     sync::{Mutex, OnceLock, MutexGuard},
 };
 
+use app::{TermApp, AppBodyProps};
 use posts::Post;
 use ratatui::prelude::Terminal;
 use send_wrapper::SendWrapper;
 use terminal::WebTerm;
+use yew::{Html, html, function_component};
+use yew_router::prelude::*;
 
 pub mod posts;
 pub mod terminal;
@@ -66,9 +69,43 @@ pub fn console_log(s: impl Display) {
     web_sys::console::log_1(&format!("{s}").into())
 }
 
+#[derive(Debug, Clone, Routable, PartialEq)]
+enum Route {
+    #[at("/")]
+    Home,
+    #[at("/projects")]
+    AllProjects,
+    #[at("/projects/:name")]
+    Project { name: String },
+    #[at("/blog")]
+    Blog,
+    #[at("/blog/:name")]
+    Post { name: String },
+}
+
+fn switch(route: Route) -> Html {
+    match route {
+        Route::Home => html! { <TermApp body = { AppBodyProps::Home } /> },
+        Route::AllProjects => html! { <TermApp body = { AppBodyProps::AllProjects } /> },
+        Route::Project { name } => html! { <TermApp body = { AppBodyProps::Project(name) } /> },
+        Route::Blog => html! { <TermApp body = { AppBodyProps::Blog } /> },
+        Route::Post { name } => html! { <TermApp body = { AppBodyProps::Post(name) } /> },
+    }
+}
+
+#[function_component]
+#[allow(non_snake_case)]
+fn App() -> Html {
+    html! {
+        <BrowserRouter>
+            <Switch<Route> render={switch} />
+        </BrowserRouter>
+    }
+}
+
 fn main() {
     // Load the webterm "terminal" and ratatui renderer
     TERMINAL.load();
     // Render the app
-    yew::Renderer::<Post>::new().render();
+    yew::Renderer::<App>::new().render();
 }

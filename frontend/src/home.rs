@@ -1,40 +1,35 @@
-use ratatui::Frame;
+use ratatui::{prelude::*, widgets::*};
 
-use crate::app::CursorMap;
-
+use crate::{app::CursorMap, console_debug, console_log, terminal::get_window_size};
 
 #[derive(Debug, PartialEq)]
-pub struct Home {
-}
+pub struct Home {}
 
 impl Home {
     pub fn create(map: &mut CursorMap) -> Self {
-        todo!()
+        Self {}
     }
 
-    pub fn draw(&self, frame: &mut Frame) {
-        todo!()
+    pub fn draw(&self, chunk: Rect, frame: &mut Frame) -> Rect {
+        draw_screen(chunk, frame)
     }
 }
 
-fn draw_screen(frame: &mut Frame) {
-    console_log("Drawing frame...");
-    let (width, height) = get_window_size();
-    let mut rect = frame.size();
-    console_debug(rect);
-    rect.height = height;
-    console_debug(rect);
-
+fn draw_screen(rect: Rect, frame: &mut Frame) -> Rect {
+    console_log("Drawing home page...");
+    console_log(format!("Given area: {rect:?}"));
     // Words made "loooong" to demonstrate line breaking.
     let s = "Veeeeeeeeeeeeeeeery    loooooooooooooooooong   striiiiiiiiiiiiiiiiiiiiiiiiiing.   ";
-    let mut long_line = s.repeat((width as usize) / s.len() + 4);
+    let mut long_line = s.repeat((rect.width as usize) / s.len() + 4);
     long_line.push('\n');
 
-    console_log("Rendering block...");
-    let block = Block::default().black();
-    frame.render_widget(block, rect);
-
-    console_log("Creating layout...");
+    let area = Rect {
+        x: rect.x,
+        y: rect.y,
+        width: rect.width,
+        height: rect.height,
+    };
+    console_log(format!("Rendering area: {area:?}"));
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -43,8 +38,15 @@ fn draw_screen(frame: &mut Frame) {
             Constraint::Percentage(25),
             Constraint::Percentage(25),
         ])
-        .split(rect);
-    console_log("Created layout!!");
+        .split(area);
+
+    let digest = Rect {
+        x: 0,
+        y: chunks.last().unwrap().y + chunks.last().unwrap().height,
+        width: rect.width,
+        height: 0,
+    };
+    console_log(format!("Returning area: {digest:?}"));
 
     let text = vec![
         Line::from("This is a line "),
@@ -72,18 +74,19 @@ fn draw_screen(frame: &mut Frame) {
             ))
     };
 
-    console_log("Drawing first paragraph...");
+    console_log("Rendering home page...");
     let paragraph = Paragraph::new(text.clone())
         .style(Style::default().fg(Color::Gray))
         .block(create_block("Default alignment (Left), no wrap"));
     frame.render_widget(paragraph, chunks[0]);
+    console_log("Rendered first paragraph...");
 
-    console_log("Drawing second paragraph...");
     let paragraph = Paragraph::new(text.clone())
         .style(Style::default().fg(Color::Gray))
         .block(create_block("Default alignment (Left), with wrap"))
         .wrap(Wrap { trim: true });
     frame.render_widget(paragraph, chunks[1]);
+    console_log("Rendered second paragraph...");
 
     let paragraph = Paragraph::new(text.clone())
         .style(Style::default().fg(Color::Gray))
@@ -91,6 +94,7 @@ fn draw_screen(frame: &mut Frame) {
         .alignment(Alignment::Right)
         .wrap(Wrap { trim: true });
     frame.render_widget(paragraph, chunks[2]);
+    console_log("Rendered third paragraph...");
 
     let paragraph = Paragraph::new(text)
         .style(Style::default().fg(Color::Gray))
@@ -98,5 +102,7 @@ fn draw_screen(frame: &mut Frame) {
         .alignment(Alignment::Center)
         .wrap(Wrap { trim: true });
     frame.render_widget(paragraph, chunks[3]);
-    console_log("Finished drawing frame...");
+    console_log("Rendered fourth paragraph...");
+
+    digest
 }
