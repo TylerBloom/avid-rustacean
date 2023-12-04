@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Query, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     response::IntoResponse,
     Json,
@@ -14,11 +14,6 @@ pub struct Post {
     pub body: String,
 }
 
-#[derive(Debug, PartialEq, Eq, Deserialize, Clone)]
-pub struct PostQuery {
-    title: String,
-}
-
 pub async fn create_post(State(state): State<AppState>, Json(post): Json<Post>) -> StatusCode {
     if state.create_post(post) {
         StatusCode::OK
@@ -29,13 +24,20 @@ pub async fn create_post(State(state): State<AppState>, Json(post): Json<Post>) 
 
 pub async fn get_post(
     State(state): State<AppState>,
-    Query(title): Query<PostQuery>,
+    Path(title): Path<String>,
 ) -> (StatusCode, Json<Option<Post>>) {
-    let body = state.get_post(&title.title);
+    let body = state.get_post(&title);
     let status = match &body {
         Some(_) => StatusCode::OK,
         None => StatusCode::NOT_FOUND,
     };
 
     (status, Json(body))
+}
+
+pub async fn get_post_summaries(
+    State(state): State<AppState>,
+) -> (StatusCode, Json<Vec<(String, String)>>) {
+    let body = state.get_post_summaries();
+    (StatusCode::OK, Json(body))
 }

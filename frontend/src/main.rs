@@ -26,6 +26,13 @@ pub static TERMINAL: Renderer = Renderer::new();
 
 pub struct Renderer(OnceLock<Mutex<SendWrapper<Terminal<WebTerm>>>>);
 
+#[cfg(not(debug_assertions))]
+/// The address of the service one Shuttle
+pub const HOST_ADDRESS: &str = "s://avid-rustacean.shuttleapp.rs";
+#[cfg(debug_assertions)]
+/// The address of the local host
+pub const HOST_ADDRESS: &str = "://localhost:8000";
+
 impl Renderer {
     /// Construct the terminal renderer.
     pub const fn new() -> Self {

@@ -32,6 +32,15 @@ impl AppState {
     pub fn get_post(&self, title: &str) -> Option<Post> {
         self.posts.read().unwrap().get(title).cloned()
     }
+
+    pub fn get_post_summaries(&self) -> Vec<(String, String)> {
+        self.posts
+            .read()
+            .unwrap()
+            .values()
+            .map(|post| (post.title.clone(), post.body.clone()))
+            .collect()
+    }
 }
 
 impl Default for AppState {

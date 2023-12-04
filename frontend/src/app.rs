@@ -1,15 +1,15 @@
-use std::{cmp::Ordering, collections::HashMap};
+use std::{cmp::Ordering, collections::HashMap, ops::Range};
 
 use yew::{Component, Context, Properties};
 use yew_router::scope_ext::RouterScopeExt;
 
 use crate::{
-    blog::Blog,
+    blog::{Blog, BlogMessage},
     console_debug, console_log,
     home::Home,
     palette::GruvboxColor,
     posts::Post,
-    project::{AllProjects, Project},
+    project::{AllProjects, AllProjectsMessage, Project},
     terminal::get_window_size,
     Route, TERMINAL,
 };
@@ -40,7 +40,7 @@ pub struct TermAppProps {
 #[derive(Debug, PartialEq)]
 pub enum AppBody {
     Home(Home),
-    Projects(AllProjects),
+    AllProjects(AllProjects),
     Project(Project),
     Blog(Blog),
     Post(Post),
@@ -48,13 +48,22 @@ pub enum AppBody {
 
 impl AppBody {
     fn draw(&self, chunk: Rect, frame: &mut Frame) -> Rect {
-        console_log(format!("Drawing body: {chunk:?}"));
         match self {
             AppBody::Home(home) => home.draw(chunk, frame),
-            AppBody::Projects(projects) => projects.draw(chunk, frame),
+            AppBody::AllProjects(projects) => projects.draw(chunk, frame),
             AppBody::Project(proj) => proj.draw(frame),
             AppBody::Blog(blog) => blog.draw(chunk, frame),
             AppBody::Post(post) => post.draw(frame),
+        }
+    }
+
+    fn handle_motion(&mut self, motion: Motion, map: &CursorMap) {
+        match self {
+            AppBody::AllProjects(projects) => projects.handle_motion(motion, map),
+            AppBody::Blog(blog) => blog.handle_motion(motion, map),
+            AppBody::Home(home) => {}
+            AppBody::Project(proj) => {}
+            AppBody::Post(post) => {}
         }
     }
 }
@@ -70,12 +79,12 @@ pub enum AppBodyProps {
 }
 
 impl AppBodyProps {
-    fn create_body(self, map: &mut CursorMap) -> AppBody {
+    fn create_body(self, ctx: &Context<TermApp>, map: &mut CursorMap) -> AppBody {
         match self {
             AppBodyProps::Home => AppBody::Home(Home::create(map)),
-            AppBodyProps::AllProjects => AppBody::Projects(AllProjects::create(map)),
+            AppBodyProps::AllProjects => AppBody::AllProjects(AllProjects::create(ctx, map)),
             AppBodyProps::Project(name) => AppBody::Project(Project::create(name, map)),
-            AppBodyProps::Blog => AppBody::Blog(Blog::create(map)),
+            AppBodyProps::Blog => AppBody::Blog(Blog::create(ctx, map)),
             AppBodyProps::Post(name) => AppBody::Post(Post::create(name, map)),
         }
     }
@@ -85,10 +94,22 @@ impl AppBodyProps {
 pub enum TermAppMsg {
     Resized,
     Entered,
-    MovedUp,
-    MovedLeft,
-    MovedRight,
-    MovedDown,
+    SelectedMoved(Motion),
+    ComponentMsg(ComponentMsg),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Motion {
+    Up,
+    Down,
+    Left,
+    Right,
+}
+
+#[derive(Debug)]
+pub enum ComponentMsg {
+    AllProjects(AllProjectsMessage),
+    Blog(BlogMessage),
 }
 
 impl TermApp {
@@ -108,7 +129,6 @@ impl TermApp {
             height: area.height.saturating_sub(6),
         };
         let body = self.body.draw(chunk, frame);
-        console_log("Body drawn!!");
         let chunk = Rect {
             x: 0,
             y: body.y,
@@ -124,8 +144,18 @@ impl TermApp {
             .block(Block::default().borders(Borders::ALL))
             .style(GruvboxColor::teal().full_style(GruvboxColor::dark_2()))
             .highlight_style(GruvboxColor::green().full_style(GruvboxColor::dark_3()));
+        console_debug(self.cursor_map.get_position());
+        let index = match self.cursor_map.get_position() {
+            (x, 0) => x,
+            _ => match &self.body {
+                AppBody::Home(_) => 0,
+                AppBody::AllProjects(_) | AppBody::Project(_) => 1,
+                AppBody::Blog(_) | AppBody::Post(_) => 2,
+            },
+        };
+        tabs = tabs.select(index);
         if let (x, 0) = self.cursor_map.get_position() {
-            tabs = tabs.select(x);
+            console_log("Selecting a tab...");
         }
         frame.render_widget(tabs, rect);
     }
@@ -170,10 +200,10 @@ impl Component for TermApp {
         let func = move |event: JsValue| {
             let event: KeyboardEvent = event.into();
             match event.key().as_str() {
-                "ArrowUp" => cb.emit(TermAppMsg::MovedUp),
-                "ArrowDown" => cb.emit(TermAppMsg::MovedDown),
-                "ArrowLeft" => cb.emit(TermAppMsg::MovedLeft),
-                "ArrowRight" => cb.emit(TermAppMsg::MovedRight),
+                "ArrowUp" => cb.emit(TermAppMsg::SelectedMoved(Motion::Up)),
+                "ArrowDown" => cb.emit(TermAppMsg::SelectedMoved(Motion::Down)),
+                "ArrowLeft" => cb.emit(TermAppMsg::SelectedMoved(Motion::Left)),
+                "ArrowRight" => cb.emit(TermAppMsg::SelectedMoved(Motion::Right)),
                 _ => {}
             }
         };
@@ -197,7 +227,7 @@ impl Component for TermApp {
         }
 
         // Create the viewer
-        let body = ctx.props().body.clone().create_body(&mut cursor_map);
+        let body = ctx.props().body.clone().create_body(ctx, &mut cursor_map);
         Self { cursor_map, body }
     }
 
@@ -212,18 +242,28 @@ impl Component for TermApp {
                 }
                 (1, 0) => {
                     ctx.link().navigator().unwrap().push(&Route::AllProjects);
-                    self.body = AppBody::Projects(AllProjects::create(&mut self.cursor_map));
+                    self.body =
+                        AppBody::AllProjects(AllProjects::create(ctx, &mut self.cursor_map));
                 }
                 (2, 0) => {
                     ctx.link().navigator().unwrap().push(&Route::Blog);
-                    self.body = AppBody::Blog(Blog::create(&mut self.cursor_map));
+                    self.body = AppBody::Blog(Blog::create(ctx, &mut self.cursor_map));
                 }
                 _ => todo!(),
             },
-            TermAppMsg::MovedUp => self.cursor_map.move_up(),
-            TermAppMsg::MovedLeft => self.cursor_map.move_left(),
-            TermAppMsg::MovedRight => self.cursor_map.move_right(),
-            TermAppMsg::MovedDown => self.cursor_map.move_down(),
+            TermAppMsg::ComponentMsg(msg) => match (&mut self.body, msg) {
+                (AppBody::AllProjects(body), ComponentMsg::AllProjects(msg)) => {
+                    body.update(msg, &mut self.cursor_map)
+                }
+                (AppBody::Blog(body), ComponentMsg::Blog(msg)) => {
+                    body.update(msg, &mut self.cursor_map)
+                }
+                _ => {}
+            },
+            TermAppMsg::SelectedMoved(motion) => {
+                self.cursor_map.motion(motion);
+                self.body.handle_motion(motion, &self.cursor_map);
+            }
         }
         true
     }
@@ -231,7 +271,6 @@ impl Component for TermApp {
     fn view(&self, _ctx: &Context<Self>) -> Html {
         let mut term = TERMINAL.term();
         let area = term.size().unwrap();
-        console_log(format!("Size of the terminal: {area:?}"));
         term.draw(|frame| self.draw(area, frame)).unwrap();
         term.backend_mut().view()
     }
@@ -252,24 +291,60 @@ impl CursorMap {
     }
 
     /// Adds a string to the end of the current line.
-    fn push(&mut self, next: String) {
+    pub fn push(&mut self, next: String) {
         self.map.last_mut().unwrap().push(next)
     }
 
     /// Adds a new, blank line onto which this item and all subsequent item will be pushed.
-    fn append_and_push(&mut self, next: String) {
+    pub fn append_and_push(&mut self, next: String) {
         self.map.push(Vec::new());
         self.push(next)
     }
 
     /// Returns the current position of the cursor
-    fn get_position(&self) -> (usize, usize) {
+    pub fn get_position(&self) -> (usize, usize) {
         self.cursor
     }
 
     /// Gets the value that the cursor is hovering over.
-    fn get_hovering(&self) -> &str {
+    pub fn get_hovering(&self) -> &str {
         &self.map[self.cursor.1][self.cursor.0]
+    }
+
+    /// Clears some number of rows from the map
+    pub fn clear_after(&mut self, index: usize) {
+        self.map.drain(index..);
+        if self.cursor.1 >= self.map.len() {
+            self.cursor.1 = self.map.len() - 1;
+        }
+
+        if self.cursor.0 >= self.map[self.cursor.1].len() {
+            self.cursor.0 = self.map[self.cursor.1].len() - 1;
+        }
+    }
+
+    /// Moves the cursor as close as possible to the give position. Cursor is moved to the last
+    /// row and/or column is the X and/or Y position is too large.
+    fn set_cursor(&mut self, (mut x, mut y): (usize, usize)) {
+        if y >= self.map.len() {
+            y = self.map.len() - 1;
+        }
+        self.cursor.1 = y;
+
+        if x >= self.map[y].len() {
+            x = self.map[y].len() - 1;
+        }
+        self.cursor.0 = x;
+    }
+
+    /// Moves the cursor with the given motion
+    fn motion(&mut self, motion: Motion) {
+        match motion {
+            Motion::Up => self.move_up(),
+            Motion::Down => self.move_down(),
+            Motion::Left => self.move_left(),
+            Motion::Right => self.move_right(),
+        }
     }
 
     /// Moves the cursor one position to the left, wrapping to the start of the prior line.
@@ -318,5 +393,17 @@ impl CursorMap {
             self.cursor.1 = 0;
         }
         self.cursor.0 = std::cmp::min(self.cursor.0, self.map[self.cursor.1].len() - 1);
+    }
+}
+
+impl From<AllProjectsMessage> for TermAppMsg {
+    fn from(value: AllProjectsMessage) -> Self {
+        Self::ComponentMsg(ComponentMsg::AllProjects(value))
+    }
+}
+
+impl From<BlogMessage> for TermAppMsg {
+    fn from(value: BlogMessage) -> Self {
+        Self::ComponentMsg(ComponentMsg::Blog(value))
     }
 }

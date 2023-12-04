@@ -16,8 +16,6 @@ impl Home {
 }
 
 fn draw_screen(rect: Rect, frame: &mut Frame) -> Rect {
-    console_log("Drawing home page...");
-    console_log(format!("Given area: {rect:?}"));
     // Words made "loooong" to demonstrate line breaking.
     let s = "Veeeeeeeeeeeeeeeery    loooooooooooooooooong   striiiiiiiiiiiiiiiiiiiiiiiiiing.   ";
     let mut long_line = s.repeat((rect.width as usize) / s.len() + 4);
@@ -29,7 +27,6 @@ fn draw_screen(rect: Rect, frame: &mut Frame) -> Rect {
         width: rect.width,
         height: rect.height,
     };
-    console_log(format!("Rendering area: {area:?}"));
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -46,7 +43,6 @@ fn draw_screen(rect: Rect, frame: &mut Frame) -> Rect {
         width: rect.width,
         height: 0,
     };
-    console_log(format!("Returning area: {digest:?}"));
 
     let text = vec![
         Line::from("This is a line "),
@@ -74,19 +70,16 @@ fn draw_screen(rect: Rect, frame: &mut Frame) -> Rect {
             ))
     };
 
-    console_log("Rendering home page...");
     let paragraph = Paragraph::new(text.clone())
         .style(Style::default().fg(Color::Gray))
         .block(create_block("Default alignment (Left), no wrap"));
     frame.render_widget(paragraph, chunks[0]);
-    console_log("Rendered first paragraph...");
 
     let paragraph = Paragraph::new(text.clone())
         .style(Style::default().fg(Color::Gray))
         .block(create_block("Default alignment (Left), with wrap"))
         .wrap(Wrap { trim: true });
     frame.render_widget(paragraph, chunks[1]);
-    console_log("Rendered second paragraph...");
 
     let paragraph = Paragraph::new(text.clone())
         .style(Style::default().fg(Color::Gray))
@@ -94,7 +87,6 @@ fn draw_screen(rect: Rect, frame: &mut Frame) -> Rect {
         .alignment(Alignment::Right)
         .wrap(Wrap { trim: true });
     frame.render_widget(paragraph, chunks[2]);
-    console_log("Rendered third paragraph...");
 
     let paragraph = Paragraph::new(text)
         .style(Style::default().fg(Color::Gray))
@@ -102,7 +94,6 @@ fn draw_screen(rect: Rect, frame: &mut Frame) -> Rect {
         .alignment(Alignment::Center)
         .wrap(Wrap { trim: true });
     frame.render_widget(paragraph, chunks[3]);
-    console_log("Rendered fourth paragraph...");
 
     digest
 }

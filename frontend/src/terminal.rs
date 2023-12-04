@@ -80,7 +80,6 @@ impl WebTerm {
         let (width, height) = get_window_size();
         if self.buffer.len() != height as usize || self.buffer[0].len() != width as usize {
             // Reset the buffer only if the size is actually different
-            console_log("Resizing the buffer!!");
             self.buffer = Self::get_sized_buffer();
         }
     }
@@ -133,7 +132,6 @@ impl Backend for WebTerm {
     }
 
     fn flush(&mut self) -> Result<()> {
-        console_log("Flushing terminal buffer!!");
         self.render();
         Ok(())
     }
