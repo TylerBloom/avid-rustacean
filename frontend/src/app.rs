@@ -13,11 +13,11 @@ use crate::{
     terminal::get_window_size,
     Route, TERMINAL,
 };
+use derive_more::From;
 use js_sys::Function;
 use ratatui::{prelude::*, widgets::*};
 use wasm_bindgen::{prelude::Closure, JsValue};
 use yew::prelude::*;
-use derive_more::From;
 
 /// This module contains all of the machinery to run the UI app. The UI app is a single page
 /// application consisting of the header, body, and footer. The body is changed when switching
@@ -55,6 +55,26 @@ impl AppBody {
             AppBody::Project(proj) => proj.draw(chunk, frame),
             AppBody::Blog(blog) => blog.draw(chunk, frame),
             AppBody::Post(post) => post.draw(chunk, frame),
+        }
+    }
+
+    fn update(&mut self, msg: ComponentMsg, map: &mut CursorMap) {
+        match (self, msg) {
+            (AppBody::AllProjects(body), ComponentMsg::AllProjects(msg)) => body.update(msg, map),
+            (AppBody::Project(body), ComponentMsg::Project(msg)) => body.update(msg, map),
+            (AppBody::Blog(body), ComponentMsg::Blog(msg)) => body.update(msg, map),
+            (AppBody::Post(body), ComponentMsg::Post(msg)) => body.update(msg, map),
+            _ => todo!(),
+        }
+    }
+
+    fn handle_scroll(&mut self, dir: bool) {
+        match self {
+            AppBody::Home(home) => {}
+            AppBody::AllProjects(projects) => projects.handle_scroll(dir),
+            AppBody::Blog(blog) => blog.handle_scroll(dir),
+            AppBody::Project(proj) => proj.handle_scroll(dir),
+            AppBody::Post(post) => post.handle_scroll(dir),
         }
     }
 
@@ -117,6 +137,9 @@ pub enum TermAppMsg {
     Resized,
     Entered,
     SelectedMoved(Motion),
+    // TODO: Replace bool with "up" or "down"
+    // true = up, down = false
+    Scrolled(bool),
     ComponentMsg(ComponentMsg),
 }
 
@@ -219,6 +242,28 @@ impl Component for TermApp {
             .into_js_value()
             .into();
         window.set_onkeypress(Some(&func));
+        // Bind a function to the "on-wheel" window event
+        let cb = ctx.link().callback(|msg: TermAppMsg| msg);
+        let func = move |event: JsValue| {
+            let event: WheelEvent = event.into();
+            console_log(format!(
+                "Event data: dx = {}, dy = {}, dz = {}, mode = {}",
+                event.delta_x(),
+                event.delta_y(),
+                event.delta_z(),
+                event.delta_mode()
+            ));
+            match event.delta_y().partial_cmp(&0.0) {
+                Some(Ordering::Less) => cb.emit(TermAppMsg::Scrolled(false)),
+                Some(Ordering::Greater) => cb.emit(TermAppMsg::Scrolled(true)),
+                _ => {}
+            }
+        };
+        let func: Function = Closure::<dyn 'static + Fn(JsValue)>::new(func)
+            .into_js_value()
+            .into();
+        window.set_onwheel(Some(&func));
+
         // Bind a function to the "on-keydown" window event
         let cb = ctx.link().callback(|msg: TermAppMsg| msg);
         let func = move |event: JsValue| {
@@ -292,25 +337,12 @@ impl Component for TermApp {
                     _ => {}
                 },
             },
-            TermAppMsg::ComponentMsg(msg) => match (&mut self.body, msg) {
-                (AppBody::AllProjects(body), ComponentMsg::AllProjects(msg)) => {
-                    body.update(msg, &mut self.cursor_map)
-                }
-                (AppBody::Blog(body), ComponentMsg::Blog(msg)) => {
-                    body.update(msg, &mut self.cursor_map)
-                }
-                (AppBody::Project(body), ComponentMsg::Project(msg)) => {
-                    body.update(msg, &mut self.cursor_map)
-                }
-                (AppBody::Post(body), ComponentMsg::Post(msg)) => {
-                    body.update(msg, &mut self.cursor_map)
-                }
-                _ => {}
-            },
+            TermAppMsg::ComponentMsg(msg) => self.body.update(msg, &mut self.cursor_map),
             TermAppMsg::SelectedMoved(motion) => {
                 self.cursor_map.motion(motion);
                 self.body.handle_motion(motion, &self.cursor_map);
             }
+            TermAppMsg::Scrolled(b) => self.body.handle_scroll(b),
         }
         true
     }

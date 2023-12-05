@@ -35,19 +35,24 @@ pub async fn get_all_projects(
     State(_state): State<AppState>,
 ) -> (StatusCode, Json<Vec<(String, String)>>) {
     println!("Got projects request!");
-    let data = vec![
+    let data = [
+        ("Squire", "The tournament service that in pure Rust."),
         (
-            "Squire".into(),
-            "The tournament service that in pure Rust.".into(),
+            "SquireBot",
+            "The progenitor of Squire and the starting point of my Rust journey.",
         ),
         (
-            "SquireBot".into(),
-            "The progenitor of Squire and the starting point of my Rust journey.".into(),
+            "Troupe",
+            "An actor library that I created from my work with Squire.",
         ),
-        (
-            "Troupe".into(),
-            "An actor library that I created from my work with Squire.".into(),
+    ]
+    .repeat(20);
+    (
+        StatusCode::OK,
+        Json(
+            data.into_iter()
+                .map(|(t, b)| (t.to_owned(), b.to_owned()))
+                .collect(),
         ),
-    ];
-    (StatusCode::OK, Json(data))
+    )
 }

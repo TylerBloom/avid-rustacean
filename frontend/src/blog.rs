@@ -38,6 +38,14 @@ impl Blog {
         }
     }
 
+    pub fn handle_scroll(&mut self, dir: bool) {
+        if dir {
+            self.scroll = self.scroll.saturating_add(1);
+        } else {
+            self.scroll = self.scroll.saturating_sub(1);
+        }
+    }
+
     pub fn update(&mut self, msg: BlogMessage, map: &mut CursorMap) {
         map.clear_after(1);
         match msg {

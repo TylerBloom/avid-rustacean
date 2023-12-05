@@ -6,7 +6,6 @@ use axum::{
 };
 use mongodb::Database;
 
-pub mod app;
 pub mod posts;
 pub mod state;
 pub mod projects;
