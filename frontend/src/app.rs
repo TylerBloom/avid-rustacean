@@ -8,8 +8,8 @@ use crate::{
     console_debug, console_log,
     home::Home,
     palette::GruvboxColor,
-    posts::Post,
-    project::{AllProjects, AllProjectsMessage, Project},
+    posts::{Post, PostMessage},
+    project::{AllProjects, AllProjectsMessage, Project, ProjectMessage},
     terminal::get_window_size,
     Route, TERMINAL,
 };
@@ -17,6 +17,7 @@ use js_sys::Function;
 use ratatui::{prelude::*, widgets::*};
 use wasm_bindgen::{prelude::Closure, JsValue};
 use yew::prelude::*;
+use derive_more::From;
 
 /// This module contains all of the machinery to run the UI app. The UI app is a single page
 /// application consisting of the header, body, and footer. The body is changed when switching
@@ -51,9 +52,9 @@ impl AppBody {
         match self {
             AppBody::Home(home) => home.draw(chunk, frame),
             AppBody::AllProjects(projects) => projects.draw(chunk, frame),
-            AppBody::Project(proj) => proj.draw(frame),
+            AppBody::Project(proj) => proj.draw(chunk, frame),
             AppBody::Blog(blog) => blog.draw(chunk, frame),
-            AppBody::Post(post) => post.draw(frame),
+            AppBody::Post(post) => post.draw(chunk, frame),
         }
     }
 
@@ -64,6 +65,27 @@ impl AppBody {
             AppBody::Home(home) => {}
             AppBody::Project(proj) => {}
             AppBody::Post(post) => {}
+        }
+    }
+
+    fn handle_enter(&mut self, ctx: &Context<TermApp>, map: &CursorMap) {
+        console_log("Handling pressed enter in body...");
+        match self {
+            AppBody::AllProjects(_) => {
+                console_log("Moving from the all projects...");
+                let nav = ctx.link().navigator().unwrap();
+                let name = map.get_hovering().to_owned();
+                nav.push(&Route::Project { name });
+            }
+            AppBody::Blog(_) => {
+                console_log("Moving from the blog...");
+                let nav = ctx.link().navigator().unwrap();
+                let name = map.get_hovering().to_owned();
+                nav.push(&Route::Post { name });
+            }
+            AppBody::Home(_) => {}
+            AppBody::Project(_) => {}
+            AppBody::Post(_) => {}
         }
     }
 }
@@ -83,9 +105,9 @@ impl AppBodyProps {
         match self {
             AppBodyProps::Home => AppBody::Home(Home::create(map)),
             AppBodyProps::AllProjects => AppBody::AllProjects(AllProjects::create(ctx, map)),
-            AppBodyProps::Project(name) => AppBody::Project(Project::create(name, map)),
+            AppBodyProps::Project(name) => AppBody::Project(Project::create(name, ctx, map)),
             AppBodyProps::Blog => AppBody::Blog(Blog::create(ctx, map)),
-            AppBodyProps::Post(name) => AppBody::Post(Post::create(name, map)),
+            AppBodyProps::Post(name) => AppBody::Post(Post::create(name, ctx, map)),
         }
     }
 }
@@ -106,10 +128,12 @@ pub enum Motion {
     Right,
 }
 
-#[derive(Debug)]
+#[derive(Debug, From)]
 pub enum ComponentMsg {
     AllProjects(AllProjectsMessage),
     Blog(BlogMessage),
+    Project(ProjectMessage),
+    Post(PostMessage),
 }
 
 impl TermApp {
@@ -249,13 +273,36 @@ impl Component for TermApp {
                     ctx.link().navigator().unwrap().push(&Route::Blog);
                     self.body = AppBody::Blog(Blog::create(ctx, &mut self.cursor_map));
                 }
-                _ => todo!(),
+                _ => match &self.body {
+                    AppBody::AllProjects(_) => {
+                        let nav = ctx.link().navigator().unwrap();
+                        let name = self.cursor_map.get_hovering().to_owned();
+                        nav.push(&Route::Project { name: name.clone() });
+                        self.cursor_map.clear_after(1);
+                        self.body =
+                            AppBody::Project(Project::create(name, ctx, &mut self.cursor_map));
+                    }
+                    AppBody::Blog(_) => {
+                        let nav = ctx.link().navigator().unwrap();
+                        let name = self.cursor_map.get_hovering().to_owned();
+                        nav.push(&Route::Post { name: name.clone() });
+                        self.cursor_map.clear_after(1);
+                        self.body = AppBody::Post(Post::create(name, ctx, &mut self.cursor_map));
+                    }
+                    _ => {}
+                },
             },
             TermAppMsg::ComponentMsg(msg) => match (&mut self.body, msg) {
                 (AppBody::AllProjects(body), ComponentMsg::AllProjects(msg)) => {
                     body.update(msg, &mut self.cursor_map)
                 }
                 (AppBody::Blog(body), ComponentMsg::Blog(msg)) => {
+                    body.update(msg, &mut self.cursor_map)
+                }
+                (AppBody::Project(body), ComponentMsg::Project(msg)) => {
+                    body.update(msg, &mut self.cursor_map)
+                }
+                (AppBody::Post(body), ComponentMsg::Post(msg)) => {
                     body.update(msg, &mut self.cursor_map)
                 }
                 _ => {}
@@ -405,5 +452,17 @@ impl From<AllProjectsMessage> for TermAppMsg {
 impl From<BlogMessage> for TermAppMsg {
     fn from(value: BlogMessage) -> Self {
         Self::ComponentMsg(ComponentMsg::Blog(value))
+    }
+}
+
+impl From<ProjectMessage> for TermAppMsg {
+    fn from(value: ProjectMessage) -> Self {
+        Self::ComponentMsg(ComponentMsg::Project(value))
+    }
+}
+
+impl From<PostMessage> for TermAppMsg {
+    fn from(value: PostMessage) -> Self {
+        Self::ComponentMsg(ComponentMsg::Post(value))
     }
 }

@@ -10,6 +10,8 @@ use crate::{
     HOST_ADDRESS,
 };
 
+static ALL_SCROLL_STATE: Mutex<Option<ScrollbarState>> = Mutex::new(None);
+
 static SCROLL_STATE: Mutex<Option<ScrollbarState>> = Mutex::new(None);
 
 #[derive(Debug, PartialEq)]
@@ -23,27 +25,73 @@ pub enum AllProjectsMessage {
     ProjectSummaries(Vec<(String, String)>),
 }
 
-pub struct ProjectSummary {
+#[derive(Debug, PartialEq)]
+pub struct Project {
     name: String,
-    about: String,
+    body: String,
+    scroll: u16,
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Project {}
+pub enum ProjectMessage {
+    Summary(String),
+}
 
 impl Project {
-    pub fn create(name: String, map: &mut CursorMap) -> Self {
-        todo!()
+    pub fn create(name: String, ctx: &Context<TermApp>, map: &mut CursorMap) -> Self {
+        let cp_name = name.clone();
+        ctx.link().send_future(async move {
+            let body =
+                match reqwest::get(format!("http{HOST_ADDRESS}/api/v1/projects/{cp_name}")).await {
+                    Ok(resp) => resp.json().await.unwrap_or_default(),
+                    Err(_) => String::new(),
+                };
+            ProjectMessage::Summary(body)
+        });
+        Self {
+            body: String::new(),
+            name,
+            scroll: 0,
+        }
     }
 
-    pub fn draw(&self, frame: &mut Frame) -> Rect {
-        todo!()
+    pub fn update(&mut self, msg: ProjectMessage, map: &mut CursorMap) {
+        map.clear_after(1);
+        match msg {
+            ProjectMessage::Summary(body) => {
+                self.body = body;
+            }
+        }
+    }
+
+    pub fn draw(&self, mut rect: Rect, frame: &mut Frame) -> Rect {
+        let widget = Paragraph::new(self.body.clone())
+            .block(
+                Block::new()
+                    .borders(Borders::all())
+                    .title(self.name.clone())
+                    .title_alignment(Alignment::Center),
+            )
+            .scroll((self.scroll, 0));
+        frame.render_widget(widget, rect);
+        let mut state = SCROLL_STATE.lock().unwrap();
+        state.insert(ScrollbarState::new(100));
+        frame.render_stateful_widget(
+            Scrollbar::default()
+                .orientation(ScrollbarOrientation::VerticalRight)
+                .begin_symbol(Some("↑"))
+                .end_symbol(Some("↓")),
+            rect,
+            state.as_mut().unwrap(),
+        );
+        rect.y += rect.height;
+        rect
     }
 }
 
 impl AllProjects {
     pub fn create(ctx: &Context<TermApp>, map: &mut CursorMap) -> Self {
-        SCROLL_STATE
+        ALL_SCROLL_STATE
             .lock()
             .unwrap()
             .insert(ScrollbarState::default());
@@ -73,7 +121,10 @@ impl AllProjects {
     }
 
     pub fn handle_motion(&mut self, motion: Motion, map: &CursorMap) {
-        console_log(format!("Handling motion in projects. New position: {:?}", map.get_position()));
+        console_log(format!(
+            "Handling motion in projects. New position: {:?}",
+            map.get_position()
+        ));
         match map.get_position() {
             (0, y) if y > 0 && y <= self.projects.len() => {
                 self.projects
@@ -99,7 +150,7 @@ impl AllProjects {
         .block(Block::new().borders(Borders::all()))
         .scroll((self.scroll, 0));
         frame.render_widget(widget, rect);
-        let mut state = SCROLL_STATE.lock().unwrap();
+        let mut state = ALL_SCROLL_STATE.lock().unwrap();
         state.insert(ScrollbarState::new(100));
         frame.render_stateful_widget(
             Scrollbar::default()
