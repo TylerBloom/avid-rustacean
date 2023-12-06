@@ -186,7 +186,20 @@ impl TermApp {
     }
 
     fn draw_header(&self, rect: Rect, frame: &mut Frame) {
-        let titles = vec!["Home", "Projects", "Blog"];
+        let titles = vec![
+            Line::styled(
+                "Home",
+                GruvboxColor::default_style().add_modifier(Modifier::RAPID_BLINK),
+            ),
+            Line::styled(
+                "Projects",
+                GruvboxColor::default_style().add_modifier(Modifier::RAPID_BLINK),
+            ),
+            Line::styled(
+                "Blog",
+                GruvboxColor::default_style().add_modifier(Modifier::RAPID_BLINK),
+            ),
+        ];
         let mut tabs = Tabs::new(titles)
             .block(Block::default().borders(Borders::ALL))
             .style(GruvboxColor::teal().full_style(GruvboxColor::dark_2()))
@@ -351,7 +364,13 @@ impl Component for TermApp {
         let mut term = TERMINAL.term();
         let area = term.size().unwrap();
         term.draw(|frame| self.draw(area, frame)).unwrap();
-        term.backend_mut().view()
+        // TODO: Hydrate
+        term.backend_mut().hydrate(|span| {
+            let text = span.text().to_owned();
+            span.on_click(Callback::from(move |_| {
+                console_log(format!("{text} was clicked!!"))
+            }))
+        })
     }
 }
 
