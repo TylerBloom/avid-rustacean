@@ -45,14 +45,11 @@ pub async fn get_all_projects(
             "Troupe",
             "An actor library that I created from my work with Squire.",
         ),
-    ]
-    .repeat(20);
+        ("Avid Rustacean", "The blog that you're reading right now!!"),
+    ];
+    let data = (1..=100).map(|i| (format!("{i}) {}", data[i % 4].0), data[i % 4].1.to_owned()));
     (
         StatusCode::OK,
-        Json(
-            data.into_iter()
-                .map(|(t, b)| (t.to_owned(), b.to_owned()))
-                .collect(),
-        ),
+        Json(data.collect()),
     )
 }

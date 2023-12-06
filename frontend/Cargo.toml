@@ -9,11 +9,10 @@ lto = true
 opt-level="z"
 
 [dependencies]
-# In-House deps
 avid-rustacean-model = { path = "../model" }
-ratatui = { version = "0.24.0", default-features = false, features = ["all-widgets"] }
-
-# Replace this with the UI crate of your choice
+# Using my fork for now as I need access to the paragraph line count method that I implemented
+# ratatui = { version = "0.24.0", default-features = false, features = ["all-widgets"] }
+ratatui = { git = "https://github.com/TylerBloom/ratatui.git", default-features = false, features = ["all-widgets"] }
 yew = { version = "0.20", features = ["csr"] }
 yew-router = { version = "0.17.0" }
 web-sys = { version = "0.3", features = ["Window", "Screen"] }
