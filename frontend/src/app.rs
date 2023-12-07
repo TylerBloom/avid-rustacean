@@ -10,7 +10,7 @@ use crate::{
     palette::GruvboxColor,
     posts::{Post, PostMessage},
     project::{AllProjects, AllProjectsMessage, Project, ProjectMessage},
-    terminal::get_window_size,
+    terminal::{get_window_size, DehydratedSpan, NeedsHydration},
     Route, TERMINAL,
 };
 use derive_more::From;
@@ -58,13 +58,25 @@ impl AppBody {
         }
     }
 
-    fn update(&mut self, msg: ComponentMsg, map: &mut CursorMap) {
+    fn hydrate(&self, ctx: &Context<TermApp>, span: &mut DehydratedSpan) {
+        match self {
+            AppBody::Home(home) => home.hydrate(ctx, span),
+            AppBody::AllProjects(projects) => projects.hydrate(ctx, span),
+            AppBody::Project(proj) => proj.hydrate(ctx, span),
+            AppBody::Blog(blog) => blog.hydrate(ctx, span),
+            AppBody::Post(post) => post.hydrate(ctx, span),
+        }
+    }
+
+    fn update(&mut self, ctx: &Context<TermApp>, msg: ComponentMsg, map: &mut CursorMap) {
         match (self, msg) {
-            (AppBody::AllProjects(body), ComponentMsg::AllProjects(msg)) => body.update(msg, map),
-            (AppBody::Project(body), ComponentMsg::Project(msg)) => body.update(msg, map),
-            (AppBody::Blog(body), ComponentMsg::Blog(msg)) => body.update(msg, map),
-            (AppBody::Post(body), ComponentMsg::Post(msg)) => body.update(msg, map),
-            _ => todo!(),
+            (AppBody::AllProjects(body), ComponentMsg::AllProjects(msg)) => {
+                body.update(ctx, msg, map)
+            }
+            (AppBody::Project(body), ComponentMsg::Project(msg)) => body.update(ctx, msg, map),
+            (AppBody::Blog(body), ComponentMsg::Blog(msg)) => body.update(ctx, msg, map),
+            (AppBody::Post(body), ComponentMsg::Post(msg)) => body.update(ctx, msg, map),
+            _ => unreachable!("How did you get here? Open a PR, please"),
         }
     }
 
@@ -89,16 +101,13 @@ impl AppBody {
     }
 
     fn handle_enter(&mut self, ctx: &Context<TermApp>, map: &CursorMap) {
-        console_log("Handling pressed enter in body...");
         match self {
             AppBody::AllProjects(_) => {
-                console_log("Moving from the all projects...");
                 let nav = ctx.link().navigator().unwrap();
                 let name = map.get_hovering().to_owned();
                 nav.push(&Route::Project { name });
             }
             AppBody::Blog(_) => {
-                console_log("Moving from the blog...");
                 let nav = ctx.link().navigator().unwrap();
                 let name = map.get_hovering().to_owned();
                 nav.push(&Route::Post { name });
@@ -132,10 +141,11 @@ impl AppBodyProps {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, From)]
 pub enum TermAppMsg {
     Resized,
     Entered,
+    Clicked(AppBodyProps),
     SelectedMoved(Motion),
     // TODO: Replace bool with "up" or "down"
     // true = up, down = false
@@ -187,18 +197,9 @@ impl TermApp {
 
     fn draw_header(&self, rect: Rect, frame: &mut Frame) {
         let titles = vec![
-            Line::styled(
-                "Home",
-                GruvboxColor::default_style().add_modifier(Modifier::RAPID_BLINK),
-            ),
-            Line::styled(
-                "Projects",
-                GruvboxColor::default_style().add_modifier(Modifier::RAPID_BLINK),
-            ),
-            Line::styled(
-                "Blog",
-                GruvboxColor::default_style().add_modifier(Modifier::RAPID_BLINK),
-            ),
+            Line::styled("Home", GruvboxColor::default_style().to_hydrate()),
+            Line::styled("Projects", GruvboxColor::default_style().to_hydrate()),
+            Line::styled("Blog", GruvboxColor::default_style().to_hydrate()),
         ];
         let mut tabs = Tabs::new(titles)
             .block(Block::default().borders(Borders::ALL))
@@ -350,26 +351,48 @@ impl Component for TermApp {
                     _ => {}
                 },
             },
-            TermAppMsg::ComponentMsg(msg) => self.body.update(msg, &mut self.cursor_map),
+            TermAppMsg::ComponentMsg(msg) => self.body.update(ctx, msg, &mut self.cursor_map),
             TermAppMsg::SelectedMoved(motion) => {
                 self.cursor_map.motion(motion);
                 self.body.handle_motion(motion, &self.cursor_map);
             }
             TermAppMsg::Scrolled(b) => self.body.handle_scroll(b),
+            TermAppMsg::Clicked(page) => {
+                match &page {
+                    AppBodyProps::Home => ctx.link().navigator().unwrap().push(&Route::Home),
+                    AppBodyProps::AllProjects => {
+                        ctx.link().navigator().unwrap().push(&Route::AllProjects)
+                    }
+                    AppBodyProps::Blog => ctx.link().navigator().unwrap().push(&Route::Blog),
+                    AppBodyProps::Project(name) => {
+                        ctx.link().navigator().unwrap().push(&Route::Project {
+                            name: name.to_owned(),
+                        });
+                    }
+                    AppBodyProps::Post(name) => {
+                        ctx.link().navigator().unwrap().push(&Route::Post {
+                            name: name.to_owned(),
+                        });
+                    }
+                }
+                self.body = page.create_body(ctx, &mut self.cursor_map);
+            }
         }
         true
     }
 
-    fn view(&self, _ctx: &Context<Self>) -> Html {
+    fn view(&self, ctx: &Context<Self>) -> Html {
         let mut term = TERMINAL.term();
         let area = term.size().unwrap();
         term.draw(|frame| self.draw(area, frame)).unwrap();
-        // TODO: Hydrate
         term.backend_mut().hydrate(|span| {
-            let text = span.text().to_owned();
-            span.on_click(Callback::from(move |_| {
-                console_log(format!("{text} was clicked!!"))
-            }))
+            console_log(format!("Attempting to hydrate: {}", span.text()));
+            match span.text().trim() {
+                "Home" => span.on_click(ctx.link().callback(|_| AppBodyProps::Home)),
+                "Projects" => span.on_click(ctx.link().callback(|_| AppBodyProps::AllProjects)),
+                "Blog" => span.on_click(ctx.link().callback(|_| AppBodyProps::Blog)),
+                _ => self.body.hydrate(ctx, span),
+            }
         })
     }
 }

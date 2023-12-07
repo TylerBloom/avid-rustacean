@@ -8,7 +8,7 @@ use yew::prelude::*;
 use crate::{
     app::{CursorMap, TermApp},
     console_debug, console_log,
-    terminal::get_window_size,
+    terminal::{get_window_size, DehydratedSpan},
     HOST_ADDRESS, TERMINAL,
 };
 
@@ -44,6 +44,10 @@ impl Post {
         }
     }
 
+    pub fn hydrate(&self, ctx: &Context<TermApp>, span: &mut DehydratedSpan) {
+        todo!()
+    }
+
     pub fn handle_scroll(&mut self, dir: bool) {
         if dir {
             self.scroll = self.scroll.saturating_add(1);
@@ -52,7 +56,7 @@ impl Post {
         }
     }
 
-    pub fn update(&mut self, msg: PostMessage, map: &mut CursorMap) {
+    pub fn update(&mut self, ctx: &Context<TermApp>, msg: PostMessage, map: &mut CursorMap) {
         map.clear_after(1);
         match msg {
             PostMessage::Post(body) => {

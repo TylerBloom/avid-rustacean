@@ -1,6 +1,7 @@
 use ratatui::{prelude::*, widgets::*};
+use yew::Context;
 
-use crate::{app::CursorMap, console_debug, console_log, terminal::get_window_size};
+use crate::{app::{CursorMap, TermApp}, console_debug, console_log, terminal::{get_window_size, DehydratedSpan}};
 
 #[derive(Debug, PartialEq)]
 pub struct Home {}
@@ -8,6 +9,10 @@ pub struct Home {}
 impl Home {
     pub fn create(map: &mut CursorMap) -> Self {
         Self {}
+    }
+
+    pub fn hydrate(&self, ctx: &Context<TermApp>, _span: &mut DehydratedSpan) {
+        // TODO: Hydrate as needed
     }
 
     pub fn draw(&self, chunk: Rect, frame: &mut Frame) -> Rect {

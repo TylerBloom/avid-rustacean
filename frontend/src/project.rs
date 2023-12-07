@@ -6,12 +6,14 @@ use std::{
 
 use ratatui::{prelude::*, widgets::*};
 use yew::Context;
+use yew_router::prelude::*;
 
 use crate::{
-    app::{CursorMap, Motion, TermApp},
+    app::{AppBodyProps, CursorMap, Motion, TermApp, TermAppMsg},
     console_debug, console_log,
     palette::GruvboxColor,
-    HOST_ADDRESS,
+    terminal::{DehydratedSpan, NeedsHydration},
+    Route, HOST_ADDRESS,
 };
 
 #[derive(Debug, PartialEq)]
@@ -24,6 +26,7 @@ pub struct AllProjects {
 #[derive(Debug)]
 pub enum AllProjectsMessage {
     ProjectSummaries(Vec<(String, String)>),
+    Clicked(String),
     Scrolled(bool),
 }
 
@@ -91,10 +94,7 @@ impl ScrollRef {
         *self.view_start.borrow_mut() = start;
         let inner_content_length =
             (*self.content_length.borrow()).saturating_sub(*self.view_length.borrow());
-        let state = self
-            .state
-            .borrow()
-            .content_length(inner_content_length);
+        let state = self.state.borrow().content_length(inner_content_length);
         *self.state.borrow_mut() = state;
     }
 
@@ -151,6 +151,10 @@ impl Project {
         }
     }
 
+    pub fn hydrate(&self, ctx: &Context<TermApp>, span: &mut DehydratedSpan) {
+        // TODO: Hydrate as needed
+    }
+
     pub fn handle_scroll(&mut self, dir: bool) {
         if dir {
             self.state.next()
@@ -159,7 +163,7 @@ impl Project {
         }
     }
 
-    pub fn update(&mut self, msg: ProjectMessage, map: &mut CursorMap) {
+    pub fn update(&mut self, ctx: &Context<TermApp>, msg: ProjectMessage, map: &mut CursorMap) {
         match msg {
             ProjectMessage::Summary(body) => {
                 self.state.set_content_length(body.len());
@@ -172,6 +176,7 @@ impl Project {
     pub fn draw(&self, mut rect: Rect, frame: &mut Frame) -> Rect {
         console_log(format!("The project data: {self:?}"));
         self.state.set_view_length(rect.height as usize);
+        let view_start = self.state.view_start() as u16;
         let widget = Paragraph::new(self.body.clone())
             .block(
                 Block::new()
@@ -179,8 +184,7 @@ impl Project {
                     .title(self.name.clone())
                     .title_alignment(Alignment::Center),
             )
-            // TODO: Fix
-            .scroll((0, 0));
+            .scroll((view_start, 0));
         frame.render_widget(widget, rect);
         frame.render_stateful_widget(
             Scrollbar::default()
@@ -211,6 +215,19 @@ impl AllProjects {
         }
     }
 
+    pub fn hydrate(&self, ctx: &Context<TermApp>, span: &mut DehydratedSpan) {
+        for (name, _) in self.projects.iter() {
+            if span.text() == name {
+                console_log(format!("Hydrating: {name}"));
+                let name = name.clone();
+                span.on_click(
+                    ctx.link()
+                        .callback(move |_| AllProjectsMessage::Clicked(name.clone())),
+                );
+            }
+        }
+    }
+
     pub fn handle_scroll(&mut self, dir: bool) {
         if dir {
             self.state.next()
@@ -219,7 +236,7 @@ impl AllProjects {
         }
     }
 
-    pub fn update(&mut self, msg: AllProjectsMessage, map: &mut CursorMap) {
+    pub fn update(&mut self, ctx: &Context<TermApp>, msg: AllProjectsMessage, map: &mut CursorMap) {
         match msg {
             AllProjectsMessage::ProjectSummaries(projects) => {
                 self.state.set_content_length(projects.len());
@@ -230,6 +247,10 @@ impl AllProjects {
                 }
             }
             AllProjectsMessage::Scrolled(b) => self.handle_scroll(b),
+            AllProjectsMessage::Clicked(name) => {
+                ctx.link().send_message(AppBodyProps::Project(name.clone()));
+                ctx.link().navigator().unwrap().push(&Route::Project { name });
+            }
         }
     }
 
@@ -254,7 +275,8 @@ impl AllProjects {
             } else if sel > view_start + self.state.view_length().saturating_sub(3) {
                 console_log("Selected is greater than start + length");
                 let length = self.state.view_length();
-                self.state.set_view_start(sel.saturating_sub(length.saturating_sub(3)));
+                self.state
+                    .set_view_start(sel.saturating_sub(length.saturating_sub(3)));
             }
         }
         let widget = Paragraph::new(
@@ -286,5 +308,5 @@ fn get_line(s: &str, selected: bool) -> Line {
     } else {
         GruvboxColor::default_style()
     };
-    Line::styled(s, style)
+    Line::styled(s, style.to_hydrate())
 }

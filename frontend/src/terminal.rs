@@ -97,6 +97,8 @@ impl Default for WebTerm {
     }
 }
 
+const HYDRATION: Modifier = Modifier::REVERSED;
+
 impl WebTerm {
     /// The constructor for the terminal.
     pub fn new() -> Self {
@@ -129,7 +131,7 @@ impl WebTerm {
         impl HydrationSwitch {
             /// Constructor
             fn new(modifier: &Modifier) -> Self {
-                if modifier.contains(Modifier::RAPID_BLINK) {
+                if modifier.contains(HYDRATION) {
                     Self::ToHydrate
                 } else {
                     Self::Plain
@@ -137,18 +139,10 @@ impl WebTerm {
             }
 
             /// Checks to see if the next cell has different hydration needs.
-            fn changes(&self, style: &Style) -> bool {
+            fn changes(&self, cell: &Cell) -> bool {
                 match self {
-                    HydrationSwitch::Plain
-                        if style.add_modifier.contains(Modifier::RAPID_BLINK) =>
-                    {
-                        true
-                    }
-                    HydrationSwitch::ToHydrate
-                        if style.sub_modifier.contains(Modifier::RAPID_BLINK) =>
-                    {
-                        true
-                    }
+                    HydrationSwitch::Plain if cell.modifier.contains(HYDRATION) => true,
+                    HydrationSwitch::ToHydrate if !cell.modifier.contains(HYDRATION) => true,
                     _ => false,
                 }
             }
@@ -185,7 +179,7 @@ impl WebTerm {
                 if c.skip {
                     continue;
                 }
-                if c.fg != fg || c.bg != bg || dehydrated.changes(&c.style()) {
+                if c.fg != fg || c.bg != bg || dehydrated.changes(c) {
                     // Create a new node, clear the text buffer, update the foreground/background
                     if !text.is_empty() {
                         line_buf.push(dehydrated.create_span(fg, bg, &text));
@@ -371,4 +365,15 @@ fn get_raw_window_size() -> (u16, u16) {
                 .zip(s.inner_height().ok().and_then(js_val_to_int::<u16>))
         })
         .unwrap_or((120, 120))
+}
+
+/// A lazy abstraction to allow for method chain on Style to mark a cell as hydratable
+pub trait NeedsHydration {
+    fn to_hydrate(self) -> Self;
+}
+
+impl NeedsHydration for Style {
+    fn to_hydrate(self) -> Self {
+        self.add_modifier(HYDRATION)
+    }
 }

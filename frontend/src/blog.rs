@@ -2,12 +2,14 @@ use std::sync::Mutex;
 
 use ratatui::{prelude::*, widgets::*};
 use yew::Context;
+use yew_router::prelude::*;
 
 use crate::{
-    app::{CursorMap, Motion, TermApp},
+    app::{AppBodyProps, CursorMap, Motion, TermApp, TermAppMsg},
     console_log,
     palette::GruvboxColor,
-    HOST_ADDRESS,
+    terminal::DehydratedSpan,
+    Route, HOST_ADDRESS,
 };
 
 static SCROLL_STATE: Mutex<Option<ScrollbarState>> = Mutex::new(None);
@@ -21,6 +23,7 @@ pub struct Blog {
 #[derive(Debug)]
 pub enum BlogMessage {
     PostSummaries(Vec<(String, String)>),
+    Clicked(String),
 }
 
 impl Blog {
@@ -38,6 +41,18 @@ impl Blog {
         }
     }
 
+    pub fn hydrate(&self, ctx: &Context<TermApp>, span: &mut DehydratedSpan) {
+        for (name, _, _) in self.summaries.iter() {
+            if span.text() == name {
+                let name = name.clone();
+                span.on_click(
+                    ctx.link()
+                        .callback(move |_| BlogMessage::Clicked(name.clone())),
+                );
+            }
+        }
+    }
+
     pub fn handle_scroll(&mut self, dir: bool) {
         if dir {
             self.scroll = self.scroll.saturating_add(1);
@@ -46,15 +61,22 @@ impl Blog {
         }
     }
 
-    pub fn update(&mut self, msg: BlogMessage, map: &mut CursorMap) {
-        map.clear_after(1);
+    pub fn update(&mut self, ctx: &Context<TermApp>, msg: BlogMessage, map: &mut CursorMap) {
         match msg {
             BlogMessage::PostSummaries(summaries) => {
-                self.summaries = summaries.into_iter().map(|(t, s)| (t, s, false)).collect()
+                map.clear_after(1);
+                self.summaries = summaries
+                    .into_iter()
+                    .map(|(t, s)| {
+                        map.append_and_push(t.clone());
+                        (t, s, false)
+                    })
+                    .collect();
             }
-        }
-        for (title, _, _) in self.summaries.iter() {
-            map.append_and_push(title.clone());
+            BlogMessage::Clicked(name) => {
+                ctx.link().send_message(AppBodyProps::Post(name.clone()));
+                ctx.link().navigator().unwrap().push(&Route::Post { name });
+            }
         }
     }
 
