@@ -1,3 +1,4 @@
+use avid_rustacean_model::Markdown;
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
@@ -11,28 +12,36 @@ use crate::state::AppState;
 #[derive(Debug, PartialEq, Eq, Hash, Serialize, Deserialize, Clone)]
 pub struct Post {
     pub title: String,
+    pub summary: String,
     pub body: String,
 }
 
-pub async fn create_post(State(state): State<AppState>, Json(post): Json<Post>) -> StatusCode {
-    if state.create_post(post) {
-        StatusCode::OK
-    } else {
-        StatusCode::BAD_REQUEST
+pub async fn create_post(
+    State(state): State<AppState>,
+    Json(Post {
+        title,
+        summary,
+        body,
+    }): Json<Post>,
+) -> (StatusCode, Json<Option<Markdown>>) {
+    match body.parse::<Markdown>() {
+        Ok(body) => {
+            state.create_post(title, summary, body.clone());
+            (StatusCode::OK, Json(Some(body)))
+        }
+        Err(_) => (StatusCode::BAD_REQUEST, Json(None)),
     }
 }
 
 pub async fn get_post(
     State(state): State<AppState>,
     Path(title): Path<String>,
-) -> (StatusCode, Json<Option<Post>>) {
-    let body = state.get_post(&title);
-    let status = match &body {
-        Some(_) => StatusCode::OK,
-        None => StatusCode::NOT_FOUND,
-    };
-
-    (status, Json(body))
+) -> (StatusCode, Json<Markdown>) {
+    println!("Attempting to fetch post with title: {title:?}");
+    match state.get_post(&title) {
+        Some(md) => (StatusCode::OK, Json(md)),
+        None => (StatusCode::NOT_FOUND, Json(Markdown::default())),
+    }
 }
 
 pub async fn get_post_summaries(

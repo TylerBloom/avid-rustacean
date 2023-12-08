@@ -3,24 +3,27 @@
 use std::{
     fmt::{Debug, Display},
     ops::{Deref, DerefMut},
-    sync::{Mutex, OnceLock, MutexGuard},
+    sync::{Mutex, MutexGuard, OnceLock},
 };
 
-use app::{TermApp, AppBodyProps};
+use app::{AppBodyProps, TermApp};
+use avid_rustacean_model::{GruvboxColor, Markdown, MdNode, ParsedCode};
 use posts::Post;
-use ratatui::prelude::Terminal;
+use ratatui::{prelude::*, widgets::*};
 use send_wrapper::SendWrapper;
 use terminal::WebTerm;
-use yew::{Html, html, function_component};
+use yew::{function_component, html, Html};
 use yew_router::prelude::*;
 
-pub mod posts;
-pub mod terminal;
-pub mod palette;
+use crate::{palette::GruvboxExt, terminal::NeedsHydration};
+
 pub mod app;
-pub mod home;
-pub mod project;
 pub mod blog;
+pub mod home;
+pub mod palette;
+pub mod posts;
+pub mod project;
+pub mod terminal;
 
 pub static TERMINAL: Renderer = Renderer::new();
 
@@ -42,7 +45,9 @@ impl Renderer {
     /// Constructs the terminal renderer around a web term.
     pub fn load(&self) {
         self.0
-            .set(Mutex::new(SendWrapper::new(Terminal::new(WebTerm::new()).unwrap())))
+            .set(Mutex::new(SendWrapper::new(
+                Terminal::new(WebTerm::new()).unwrap(),
+            )))
             .unwrap();
     }
 
@@ -115,4 +120,65 @@ fn main() {
     TERMINAL.load();
     // Render the app
     yew::Renderer::<App>::new().render();
+}
+
+// Remember the order:
+// Span -> Line -> Text (-> Paragraph)
+
+pub fn render_markdown(frame: &mut Frame, mut rect: Rect, title: &str, md: &Markdown) -> Rect {
+    let mut lines = Vec::new();
+    for node in md.0.iter() {
+        match node {
+            MdNode::Paragraph(nodes) => lines.push(render_paragraph(nodes)),
+            MdNode::Code(code) => lines.push(render_code(code)),
+            MdNode::BlockQuote(block) => lines.push(Line::raw(block)),
+            MdNode::InlineCode(code) => lines.push(Line::raw(code)),
+            MdNode::Emphasis(text) => lines.push(Line::raw(text)),
+            MdNode::Strong(text) => lines.push(Line::raw(text)),
+            MdNode::Heading(text) => lines.push(Line::raw(text)),
+            MdNode::Text(text) => lines.push(Line::raw(text)),
+            MdNode::Break => {}
+            // TODO: No idea...
+            MdNode::List(nodes) => todo!(),
+            // TODO: Mark for hydration
+            MdNode::Link(_, _) => todo!(),
+            // TODO: Not sure how to support this yet
+            MdNode::ThematicBreak => {}
+        }
+    }
+    frame.render_widget(Paragraph::new(lines), rect);
+    rect.y += rect.height;
+    rect
+}
+
+fn render_paragraph(nodes: &[MdNode]) -> Line<'_> {
+    let mut spans = Vec::with_capacity(nodes.len());
+    for node in nodes.iter() {
+        match node {
+            MdNode::BlockQuote(s) => spans.push(Span::styled(s, GruvboxColor::dark_2().bg_style())),
+            MdNode::InlineCode(s) => spans.push(Span::styled(s, GruvboxColor::dark_2().bg_style())),
+            MdNode::Emphasis(s) => spans.push(Span::styled(s, Style::new().italic())),
+            MdNode::Link(s, _) => spans.push(Span::styled(
+                s,
+                GruvboxColor::blue().fg_style().to_hydrate(),
+            )),
+            MdNode::Strong(s) => spans.push(Span::styled(s, Style::new().bold())),
+            MdNode::Text(s) => spans.push(Span::raw(s)),
+            // TODO: Dunno yet
+            MdNode::List(_) => todo!(),
+            MdNode::ThematicBreak => todo!(),
+            MdNode::Break => todo!(),
+            // These won't happen
+            MdNode::Heading(_) | MdNode::Paragraph(_) | MdNode::Code(_) => {}
+        }
+    }
+    Line::from(spans)
+}
+
+fn render_code(code: &ParsedCode) -> Line {
+    let mut spans = Vec::with_capacity(code.0.len());
+    for (txt, (fg, _)) in &code.0 {
+        spans.push(Span::styled(txt, fg.full_style(GruvboxColor::dark_3())))
+    }
+    Line::from(spans)
 }

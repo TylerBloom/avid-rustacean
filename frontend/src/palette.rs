@@ -1,39 +1,21 @@
 use ratatui::style::{Color, Style};
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum GruvboxColor {
-    Neutral(GruvboxNeutral),
-    Accent(GruvboxAccent),
+pub use avid_rustacean_model::{GruvboxColor, GruvboxAccent, GruvboxNeutral, Shade};
+
+/// A simple trait to extend the iterface of GruvboxColor.
+pub trait GruvboxExt {
+    // TODO: Const-ify these when possible.
+    fn color_index(self) -> u8;
+    fn to_color(self) -> Color;
+    fn to_color_str(self) -> &'static str;
+    fn fg_style(self) -> Style;
+    fn bg_style(self) -> Style;
+    fn full_style(self, other: Self) -> Style;
+    fn default_style() -> Style;
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum GruvboxNeutral {
-    Dark(Shade),
-    Light(Shade),
-}
-
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum Shade {
-    Darkest,
-    Darker,
-    Lighter,
-    Lightest,
-}
-
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum GruvboxAccent {
-    Red,
-    BurntOrange,
-    Orange,
-    Yellow,
-    Green,
-    Teal,
-    Blue,
-    Pink,
-}
-
-impl GruvboxColor {
-    pub const fn color_index(self) -> u8 {
+impl GruvboxExt for GruvboxColor {
+    fn color_index(self) -> u8 {
         match self {
             GruvboxColor::Neutral(c) => match c {
                 GruvboxNeutral::Dark(s) => match s {
@@ -62,112 +44,34 @@ impl GruvboxColor {
         }
     }
 
-    pub const fn to_color(self) -> Color {
-        Color::Indexed(self.color_index())
+    fn full_style(self, other: Self) -> Style {
+        Style::new().fg(self.to_color()).bg(other.to_color())
     }
 
-    pub const fn to_color_str(self) -> &'static str {
+    fn default_style() -> Style {
+        Style::new()
+            .fg(Self::default_fg().to_color())
+            .bg(Self::default_bg().to_color())
+    }
+
+    fn to_color(self) -> Color {
+        indexed_color(self.color_index())
+    }
+
+    fn to_color_str(self) -> &'static str {
         indexed_color_str(self.color_index())
     }
 
-    /// Creates a style that uses this color as the fforeground color and the default background
-    /// color as the background.
-    pub const fn fg_style(self) -> Style {
+    fn fg_style(self) -> Style {
         Style::new()
             .fg(self.to_color())
             .bg(Self::default_bg().to_color())
     }
 
-    /// Creates a style that uses this color as the background color and the default foreground
-    /// color as the foreground.
-    pub const fn bg_style(self) -> Style {
+    fn bg_style(self) -> Style {
         Style::new()
             .fg(Self::default_fg().to_color())
             .bg(self.to_color())
-    }
-
-    /// Creates a style that uses this and another color. This color is used as the foreground and
-    /// the other as the background color.
-    pub const fn full_style(self, other: Self) -> Style {
-        Style::new().fg(self.to_color()).bg(other.to_color())
-    }
-
-    pub const fn default_style() -> Style {
-        Style::new()
-            .fg(Self::default_fg().to_color())
-            .bg(Self::default_bg().to_color())
-    }
-
-    pub const fn default_fg() -> Self {
-        Self::light_3()
-    }
-
-    pub const fn default_bg() -> Self {
-        Self::dark_2()
-    }
-
-    pub const fn dark_1() -> Self {
-        Self::Neutral(GruvboxNeutral::Dark(Shade::Darkest))
-    }
-
-    pub const fn dark_2() -> Self {
-        Self::Neutral(GruvboxNeutral::Dark(Shade::Darker))
-    }
-
-    pub const fn dark_3() -> Self {
-        Self::Neutral(GruvboxNeutral::Dark(Shade::Lighter))
-    }
-
-    pub const fn dark_4() -> Self {
-        Self::Neutral(GruvboxNeutral::Dark(Shade::Lightest))
-    }
-
-    pub const fn light_1() -> Self {
-        Self::Neutral(GruvboxNeutral::Light(Shade::Darkest))
-    }
-
-    pub const fn light_2() -> Self {
-        Self::Neutral(GruvboxNeutral::Light(Shade::Darker))
-    }
-
-    pub const fn light_3() -> Self {
-        Self::Neutral(GruvboxNeutral::Light(Shade::Lighter))
-    }
-
-    pub const fn light_4() -> Self {
-        Self::Neutral(GruvboxNeutral::Light(Shade::Lightest))
-    }
-
-    pub const fn red() -> Self {
-        Self::Accent(GruvboxAccent::Red)
-    }
-
-    pub const fn burnt_orange() -> Self {
-        Self::Accent(GruvboxAccent::BurntOrange)
-    }
-
-    pub const fn orange() -> Self {
-        Self::Accent(GruvboxAccent::Orange)
-    }
-
-    pub const fn yellow() -> Self {
-        Self::Accent(GruvboxAccent::Yellow)
-    }
-
-    pub const fn green() -> Self {
-        Self::Accent(GruvboxAccent::Green)
-    }
-
-    pub const fn teal() -> Self {
-        Self::Accent(GruvboxAccent::Teal)
-    }
-
-    pub const fn blue() -> Self {
-        Self::Accent(GruvboxAccent::Blue)
-    }
-
-    pub const fn pink() -> Self {
-        Self::Accent(GruvboxAccent::Pink)
     }
 }
 

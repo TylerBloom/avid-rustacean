@@ -11,7 +11,7 @@ use yew_router::prelude::*;
 use crate::{
     app::{AppBodyProps, CursorMap, Motion, TermApp, TermAppMsg},
     console_debug, console_log,
-    palette::GruvboxColor,
+    palette::{GruvboxColor, GruvboxExt},
     terminal::{DehydratedSpan, NeedsHydration},
     Route, HOST_ADDRESS,
 };
@@ -218,7 +218,6 @@ impl AllProjects {
     pub fn hydrate(&self, ctx: &Context<TermApp>, span: &mut DehydratedSpan) {
         for (name, _) in self.projects.iter() {
             if span.text() == name {
-                console_log(format!("Hydrating: {name}"));
                 let name = name.clone();
                 span.on_click(
                     ctx.link()
@@ -249,7 +248,10 @@ impl AllProjects {
             AllProjectsMessage::Scrolled(b) => self.handle_scroll(b),
             AllProjectsMessage::Clicked(name) => {
                 ctx.link().send_message(AppBodyProps::Project(name.clone()));
-                ctx.link().navigator().unwrap().push(&Route::Project { name });
+                ctx.link()
+                    .navigator()
+                    .unwrap()
+                    .push(&Route::Project { name });
             }
         }
     }

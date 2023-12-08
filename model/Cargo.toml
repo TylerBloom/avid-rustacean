@@ -3,9 +3,10 @@ name = "avid-rustacean-model"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+server = ["markdown", "syntect"]
+
 [dependencies]
-chrono = { version = "0.4", features = ["serde"] }
-uuid = { version = "1.0", features = ["serde"] }
 serde = { version = "1.0", features = ["derive"] }
-const_format = { version = "0.2" }
-array-concat = { version = "0.5" }
+markdown = { version = "1.0.0-alpha.16", optional = true }
+syntect = { version = "5.1.0", optional = true }

@@ -7,8 +7,8 @@ use yew_router::prelude::*;
 use crate::{
     app::{AppBodyProps, CursorMap, Motion, TermApp, TermAppMsg},
     console_log,
-    palette::GruvboxColor,
-    terminal::DehydratedSpan,
+    palette::{GruvboxColor, GruvboxExt},
+    terminal::{DehydratedSpan, NeedsHydration},
     Route, HOST_ADDRESS,
 };
 
@@ -127,5 +127,5 @@ fn get_line(s: &str, selected: bool) -> Line {
     } else {
         GruvboxColor::default_style()
     };
-    Line::styled(s, style)
+    Line::styled(s, style.to_hydrate())
 }

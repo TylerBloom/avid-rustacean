@@ -7,7 +7,7 @@ use crate::{
     blog::{Blog, BlogMessage},
     console_debug, console_log,
     home::Home,
-    palette::GruvboxColor,
+    palette::{GruvboxColor, GruvboxExt},
     posts::{Post, PostMessage},
     project::{AllProjects, AllProjectsMessage, Project, ProjectMessage},
     terminal::{get_window_size, DehydratedSpan, NeedsHydration},
@@ -386,7 +386,6 @@ impl Component for TermApp {
         let area = term.size().unwrap();
         term.draw(|frame| self.draw(area, frame)).unwrap();
         term.backend_mut().hydrate(|span| {
-            console_log(format!("Attempting to hydrate: {}", span.text()));
             match span.text().trim() {
                 "Home" => span.on_click(ctx.link().callback(|_| AppBodyProps::Home)),
                 "Projects" => span.on_click(ctx.link().callback(|_| AppBodyProps::AllProjects)),

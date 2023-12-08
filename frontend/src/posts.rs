@@ -1,7 +1,9 @@
 use std::sync::Mutex;
 
+use avid_rustacean_model::Markdown;
 use js_sys::Function;
 use ratatui::{prelude::*, widgets::*};
+use serde::Deserialize;
 use wasm_bindgen::prelude::Closure;
 use yew::prelude::*;
 
@@ -9,7 +11,7 @@ use crate::{
     app::{CursorMap, TermApp},
     console_debug, console_log,
     terminal::{get_window_size, DehydratedSpan},
-    HOST_ADDRESS, TERMINAL,
+    HOST_ADDRESS, TERMINAL, render_markdown,
 };
 
 static SCROLL_STATE: Mutex<Option<ScrollbarState>> = Mutex::new(None);
@@ -17,35 +19,42 @@ static SCROLL_STATE: Mutex<Option<ScrollbarState>> = Mutex::new(None);
 #[derive(Debug, PartialEq)]
 pub struct Post {
     title: String,
-    body: String,
+    body: Markdown,
     scroll: u16,
 }
 
 #[derive(Debug, PartialEq)]
 pub enum PostMessage {
-    Post(String),
+    Post(Markdown),
+}
+
+#[derive(Debug, PartialEq, Deserialize, Default, Clone)]
+pub struct PostData {
+    body: String,
 }
 
 impl Post {
     pub fn create(name: String, ctx: &Context<TermApp>, map: &mut CursorMap) -> Self {
-        let cp_name = name.clone();
+        let mut real_name = String::with_capacity(name.len());
+        url_escape::decode_to_string(name, &mut real_name);
+        let cp_name = real_name.clone();
         ctx.link().send_future(async move {
-            let summaries =
+            let post =
                 match reqwest::get(format!("http{HOST_ADDRESS}/api/v1/posts/{cp_name}")).await {
                     Ok(resp) => resp.json().await.unwrap_or_default(),
-                    Err(e) => String::new(),
+                    Err(e) => Markdown::default(),
                 };
-            PostMessage::Post(summaries)
+            PostMessage::Post(post)
         });
         Self {
-            title: name,
-            body: String::new(),
+            title: real_name,
+            body: Markdown::default(),
             scroll: 0,
         }
     }
 
     pub fn hydrate(&self, ctx: &Context<TermApp>, span: &mut DehydratedSpan) {
-        todo!()
+        // TODO: Hydrate as needed...
     }
 
     pub fn handle_scroll(&mut self, dir: bool) {
@@ -59,33 +68,14 @@ impl Post {
     pub fn update(&mut self, ctx: &Context<TermApp>, msg: PostMessage, map: &mut CursorMap) {
         map.clear_after(1);
         match msg {
-            PostMessage::Post(body) => {
-                self.body = body;
+            PostMessage::Post(data) => {
+                self.body = data;
             }
         }
     }
 
     pub fn draw(&self, mut rect: Rect, frame: &mut Frame) -> Rect {
-        let widget = Paragraph::new(self.body.clone())
-            .block(
-                Block::new()
-                    .borders(Borders::all())
-                    .title(self.title.clone())
-                    .title_alignment(Alignment::Center),
-            )
-            .scroll((self.scroll, 0));
-        frame.render_widget(widget, rect);
-        let mut state = SCROLL_STATE.lock().unwrap();
-        state.insert(ScrollbarState::new(100));
-        frame.render_stateful_widget(
-            Scrollbar::default()
-                .orientation(ScrollbarOrientation::VerticalRight)
-                .begin_symbol(Some("↑"))
-                .end_symbol(Some("↓")),
-            rect,
-            state.as_mut().unwrap(),
-        );
-        rect.y += rect.height;
-        rect
+        console_debug(&self.body);
+        render_markdown(frame, rect, &self.title, &self.body)
     }
 }
