@@ -130,7 +130,7 @@ pub fn render_markdown(frame: &mut Frame, mut rect: Rect, title: &str, md: &Mark
     for node in md.0.iter() {
         match node {
             MdNode::Paragraph(nodes) => lines.push(render_paragraph(nodes)),
-            MdNode::Code(code) => lines.push(render_code(code)),
+            MdNode::Code(code) => lines.extend(render_code(code).into_iter()),
             MdNode::BlockQuote(block) => lines.push(Line::raw(block)),
             MdNode::InlineCode(code) => lines.push(Line::raw(code)),
             MdNode::Emphasis(text) => lines.push(Line::raw(text)),
@@ -175,10 +175,19 @@ fn render_paragraph(nodes: &[MdNode]) -> Line<'_> {
     Line::from(spans)
 }
 
-fn render_code(code: &ParsedCode) -> Line {
+fn render_code(code: &ParsedCode) -> Vec<Line> {
+    let mut digest = Vec::new();
     let mut spans = Vec::with_capacity(code.0.len());
     for (txt, (fg, _)) in &code.0 {
-        spans.push(Span::styled(txt, fg.full_style(GruvboxColor::dark_3())))
+        let mut iter = txt.split('\n');
+        if let Some(span) = iter.next() {
+            spans.push(Span::styled(span, fg.full_style(GruvboxColor::dark_3())))
+        }
+        for line in iter {
+            let old = std::mem::take(&mut spans);
+            digest.push(Line::from(old));
+            spans.push(Span::styled(line, fg.full_style(GruvboxColor::dark_3())))
+        }
     }
-    Line::from(spans)
+    digest
 }
