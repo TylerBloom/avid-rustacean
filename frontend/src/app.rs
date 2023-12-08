@@ -260,13 +260,6 @@ impl Component for TermApp {
         let cb = ctx.link().callback(|msg: TermAppMsg| msg);
         let func = move |event: JsValue| {
             let event: WheelEvent = event.into();
-            console_log(format!(
-                "Event data: dx = {}, dy = {}, dz = {}, mode = {}",
-                event.delta_x(),
-                event.delta_y(),
-                event.delta_z(),
-                event.delta_mode()
-            ));
             match event.delta_y().partial_cmp(&0.0) {
                 Some(Ordering::Less) => cb.emit(TermAppMsg::Scrolled(false)),
                 Some(Ordering::Greater) => cb.emit(TermAppMsg::Scrolled(true)),
