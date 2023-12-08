@@ -55,8 +55,8 @@ pub async fn get_wasm() -> Response<Body> {
     Response::builder()
         /*
         .header(header::CONTENT_ENCODING, "gzip") // Unzips the compressed file
-        .header(header::CONTENT_TYPE, "application/wasm")
         */
+        .header(header::CONTENT_TYPE, "application/wasm")
         .body(body)
         .unwrap()
 }

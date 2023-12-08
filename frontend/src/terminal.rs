@@ -40,7 +40,7 @@ pub struct WebTerm {
 #[derive(Debug)]
 enum TermSpan {
     /// The data is plain data that will be rendered in a styled HTML-span tag.
-    Plain((Color, Color), String),
+    Plain((Color, Color), Modifier, String),
     /// The data might need to contain additional data, such as a callback. These will be yielded
     /// to the app for hydration before being rendered into an HTML-span tag.
     Dehydrated(DehydratedSpan),
@@ -50,6 +50,7 @@ enum TermSpan {
 #[derive(Debug, Default)]
 pub struct DehydratedSpan {
     style: (Color, Color),
+    mods: Modifier,
     text: String,
     interaction: Interaction,
 }
@@ -62,9 +63,10 @@ struct Interaction {
 }
 
 impl DehydratedSpan {
-    fn new(fg: Color, bg: Color, text: String) -> Self {
+    fn new(fg: Color, bg: Color, mods: Modifier, text: String) -> Self {
         Self {
             style: (fg, bg),
+            mods,
             text,
             interaction: Interaction::default(),
         }
@@ -98,6 +100,10 @@ impl Default for WebTerm {
 }
 
 const HYDRATION: Modifier = Modifier::REVERSED;
+const USED_MODS: Modifier = Modifier::BOLD
+    .union(Modifier::UNDERLINED)
+    .union(Modifier::ITALIC)
+    .union(HYDRATION);
 
 impl WebTerm {
     /// The constructor for the terminal.
@@ -121,57 +127,13 @@ impl WebTerm {
 
     /// The rendering process is split into three steps.
     fn prerender(&mut self) {
-        /// Tracks changes to the needs for hydration. If a cell is marked with the modifier
-        /// RAPID_BLINK, then it will be hydrated
-        enum HydrationSwitch {
-            Plain,
-            ToHydrate,
-        }
-
-        impl HydrationSwitch {
-            /// Constructor
-            fn new(modifier: &Modifier) -> Self {
-                if modifier.contains(HYDRATION) {
-                    Self::ToHydrate
-                } else {
-                    Self::Plain
-                }
-            }
-
-            /// Checks to see if the next cell has different hydration needs.
-            fn changes(&self, cell: &Cell) -> bool {
-                match self {
-                    HydrationSwitch::Plain if cell.modifier.contains(HYDRATION) => true,
-                    HydrationSwitch::ToHydrate if !cell.modifier.contains(HYDRATION) => true,
-                    _ => false,
-                }
-            }
-
-            fn switch(&mut self) {
-                match self {
-                    HydrationSwitch::Plain => *self = HydrationSwitch::ToHydrate,
-                    HydrationSwitch::ToHydrate => *self = HydrationSwitch::Plain,
-                }
-            }
-
-            /// Creates a terminal span.
-            fn create_span(&self, fg: Color, bg: Color, text: &str) -> TermSpan {
-                match self {
-                    HydrationSwitch::Plain => TermSpan::Plain((fg, bg), text.to_owned()),
-                    HydrationSwitch::ToHydrate => {
-                        TermSpan::Dehydrated(DehydratedSpan::new(fg, bg, text.to_owned()))
-                    }
-                }
-            }
-        }
-
         let Some(cell) = self.buffer.first().and_then(|l| l.first()) else {
             return;
         };
 
         let mut fg = cell.fg;
         let mut bg = cell.bg;
-        let mut dehydrated = HydrationSwitch::new(&cell.style().add_modifier);
+        let mut mods = cell.modifier;
         for line in self.buffer.iter() {
             let mut text = String::with_capacity(line.len());
             let mut line_buf: Vec<TermSpan> = Vec::new();
@@ -179,12 +141,17 @@ impl WebTerm {
                 if c.skip {
                     continue;
                 }
-                if c.fg != fg || c.bg != bg || dehydrated.changes(c) {
+                if fg != c.fg || bg != c.bg || mods != c.modifier {
                     // Create a new node, clear the text buffer, update the foreground/background
                     if !text.is_empty() {
-                        line_buf.push(dehydrated.create_span(fg, bg, &text));
+                        let span = if mods.contains(HYDRATION) {
+                            TermSpan::Dehydrated(DehydratedSpan::new(fg, bg, mods, text.to_owned()))
+                        } else {
+                            TermSpan::Plain((fg, bg), mods, text.to_owned())
+                        };
+                        line_buf.push(span);
                     }
-                    dehydrated.switch();
+                    mods = c.modifier;
                     fg = c.fg;
                     bg = c.bg;
                     text.clear();
@@ -193,7 +160,12 @@ impl WebTerm {
             }
             // Create a new node, combine into a `pre` tag, push onto buf
             if !text.is_empty() {
-                line_buf.push(dehydrated.create_span(fg, bg, &text));
+                let span = if mods.contains(HYDRATION) {
+                    TermSpan::Dehydrated(DehydratedSpan::new(fg, bg, mods, text.to_owned()))
+                } else {
+                    TermSpan::Plain((fg, bg), mods, text.to_owned())
+                };
+                line_buf.push(span);
             }
             self.pre_hydrated.push(line_buf);
         }
@@ -208,19 +180,22 @@ impl WebTerm {
             let mut inner: Vec<Html> = Vec::with_capacity(line.len());
             for span in line {
                 match span {
-                    TermSpan::Plain((fg, bg), text) => inner.push(create_span(fg, bg, &text)),
+                    TermSpan::Plain((fg, bg), mods, text) => {
+                        inner.push(create_span(fg, bg, mods, &text))
+                    }
                     TermSpan::Dehydrated(mut span) => {
                         hydrator(&mut span);
                         let DehydratedSpan {
                             style: (fg, bg),
                             text,
                             interaction,
+                            mods,
                         } = span;
                         let Interaction {
                             on_click,
                             hyperlink,
                         } = interaction;
-                        let mut element = create_span_with_callback(fg, bg, &text, on_click);
+                        let mut element = create_span_with_callback(fg, bg, mods, &text, on_click);
                         if let Some(link) = hyperlink {
                             element = html! { <a href = { link }> { element } </a> };
                         }
@@ -294,19 +269,21 @@ impl Backend for WebTerm {
     }
 }
 
-fn create_span(fg: Color, bg: Color, text: &str) -> Html {
-    create_span_with_callback(fg, bg, text, None)
+fn create_span(fg: Color, bg: Color, mods: Modifier, text: &str) -> Html {
+    create_span_with_callback(fg, bg, mods, text, None)
 }
 
 fn create_span_with_callback(
     fg: Color,
     bg: Color,
+    mods: Modifier,
     text: &str,
     cb: Option<Callback<MouseEvent>>,
 ) -> Html {
     let fg = to_css_color(fg).unwrap_or(GruvboxColor::default_fg().to_color_str().into());
     let bg = to_css_color(bg).unwrap_or(GruvboxColor::default_bg().to_color_str().into());
-    let style = format!("color: {fg}; background-color: {bg};");
+    let mut style = format!("color: {fg}; background-color: {bg};");
+    extend_css(mods, &mut style);
     match cb {
         Some(cb) => html! { <span style={ style } onclick = { cb }> { text } </span> },
         None => html! { <span style={ style }> { text } </span> },
@@ -375,5 +352,19 @@ pub trait NeedsHydration {
 impl NeedsHydration for Style {
     fn to_hydrate(self) -> Self {
         self.add_modifier(HYDRATION)
+    }
+}
+
+/// Extends a CSS style string to include the necessary segments for the current modifiers.
+fn extend_css(mods: Modifier, css: &mut String) {
+    if mods.contains(Modifier::BOLD) {
+        css.push_str(" font-weight: bolder;");
+    }
+    if mods.contains(Modifier::ITALIC) {
+        css.push_str(" font-style: oblique;");
+    }
+
+    if mods.contains(Modifier::UNDERLINED) {
+        css.push_str(" text-decoration: underline;");
     }
 }

@@ -1,6 +1,6 @@
 use ratatui::style::{Color, Style};
 
-pub use avid_rustacean_model::{GruvboxColor, GruvboxAccent, GruvboxNeutral, Shade};
+pub use avid_rustacean_model::*;
 
 /// A simple trait to extend the iterface of GruvboxColor.
 pub trait GruvboxExt {
@@ -98,25 +98,8 @@ pub const fn indexed_gruvbox(i: u8) -> GruvboxColor {
 }
 
 pub const fn indexed_color(i: u8) -> Color {
-    match i {
-        0 => BASE_0_RGB,
-        1 => BASE_1_RGB,
-        2 => BASE_2_RGB,
-        3 => BASE_3_RGB,
-        4 => BASE_4_RGB,
-        5 => BASE_5_RGB,
-        6 => BASE_6_RGB,
-        7 => BASE_7_RGB,
-        8 => BASE_8_RGB,
-        9 => BASE_9_RGB,
-        10 => BASE_A_RGB,
-        11 => BASE_B_RGB,
-        12 => BASE_C_RGB,
-        13 => BASE_D_RGB,
-        14 => BASE_E_RGB,
-        15 => BASE_F_RGB,
-        _ => panic!("Unknown color index!!"),
-    }
+    assert!(0 <= 15);
+    Color::Indexed(i)
 }
 
 pub const fn indexed_color_str(i: u8) -> &'static str {
@@ -140,28 +123,6 @@ pub const fn indexed_color_str(i: u8) -> &'static str {
         _ => panic!("Unknown color index!!"),
     }
 }
-
-// Darks
-const BASE_0_HEX: &str = "#1d2021";
-const BASE_1_HEX: &str = "#3c3836";
-const BASE_2_HEX: &str = "#504945";
-const BASE_3_HEX: &str = "#665c54";
-
-// Lights
-const BASE_4_HEX: &str = "#bdae93";
-const BASE_5_HEX: &str = "#d5c4a1";
-const BASE_6_HEX: &str = "#ebdbb2";
-const BASE_7_HEX: &str = "#fbf1c7";
-
-// Accents
-const BASE_8_HEX: &str = "#fb4934";
-const BASE_9_HEX: &str = "#d65d0e";
-const BASE_A_HEX: &str = "#fe8019";
-const BASE_B_HEX: &str = "#fabd2f";
-const BASE_C_HEX: &str = "#b8bb26";
-const BASE_D_HEX: &str = "#8ec07c";
-const BASE_E_HEX: &str = "#83a598";
-const BASE_F_HEX: &str = "#d3869b";
 
 // Darks
 const BASE_0_RGB: Color = Color::Rgb(29, 32, 33);

@@ -264,7 +264,7 @@ mod server {
                 return Err(MdError);
             };
             for (style, item) in parsed {
-                digest.push((item.to_owned(), convert_style(style)?));
+                digest.push((item.replace('\t', "  "), convert_style(style)?));
             }
         }
         Ok(ParsedCode(digest))
