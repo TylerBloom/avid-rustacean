@@ -1,6 +1,5 @@
 use std::sync::Mutex;
 
-use avid_rustacean_model::Markdown;
 use js_sys::Function;
 use ratatui::{prelude::*, widgets::*};
 use serde::Deserialize;
@@ -11,7 +10,8 @@ use crate::{
     app::{CursorMap, TermApp},
     console_debug, console_log,
     terminal::{get_window_size, DehydratedSpan},
-    HOST_ADDRESS, TERMINAL, render_markdown,
+    utils::{render_markdown, Markdown, ScrollRef},
+    HOST_ADDRESS, TERMINAL,
 };
 
 static SCROLL_STATE: Mutex<Option<ScrollbarState>> = Mutex::new(None);
@@ -41,7 +41,12 @@ impl Post {
         ctx.link().send_future(async move {
             let post =
                 match reqwest::get(format!("http{HOST_ADDRESS}/api/v1/posts/{cp_name}")).await {
-                    Ok(resp) => resp.json().await.unwrap_or_default(),
+                    Ok(resp) => Markdown::new(
+                        cp_name,
+                        resp.json::<avid_rustacean_model::Markdown>()
+                            .await
+                            .unwrap_or_default(),
+                    ),
                     Err(e) => Markdown::default(),
                 };
             PostMessage::Post(post)
@@ -51,6 +56,10 @@ impl Post {
             body: Markdown::default(),
             scroll: 0,
         }
+    }
+
+    pub fn selected(&self) -> Option<usize> {
+        None
     }
 
     pub fn hydrate(&self, ctx: &Context<TermApp>, span: &mut DehydratedSpan) {
@@ -65,7 +74,12 @@ impl Post {
         }
     }
 
-    pub fn update(&mut self, ctx: &Context<TermApp>, msg: PostMessage, map: &mut CursorMap) {
+    pub fn update(
+        &mut self,
+        ctx: &Context<TermApp>,
+        msg: PostMessage,
+        map: &mut CursorMap,
+    ) {
         map.clear_after(1);
         match msg {
             PostMessage::Post(data) => {
@@ -74,8 +88,7 @@ impl Post {
         }
     }
 
-    pub fn draw(&self, mut rect: Rect, frame: &mut Frame) -> Rect {
-        console_debug(&self.body);
-        render_markdown(frame, rect, &self.title, &self.body)
+    pub fn draw(&self, scroll: &ScrollRef, mut rect: Rect, frame: &mut Frame) {
+        self.body.draw(scroll, rect, frame)
     }
 }

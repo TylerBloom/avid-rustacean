@@ -26,6 +26,7 @@ pub mod home;
 pub mod palette;
 pub mod posts;
 pub mod project;
+pub mod utils;
 pub mod terminal;
 
 pub static TERMINAL: Renderer = Renderer::new();
@@ -123,113 +124,4 @@ fn main() {
     TERMINAL.load();
     // Render the app
     yew::Renderer::<App>::new().render();
-}
-
-// Remember the order:
-// Span -> Line -> Text (-> Paragraph)
-
-pub fn render_markdown(frame: &mut Frame, mut rect: Rect, title: &str, md: &Markdown) -> Rect {
-    let mut lines = Vec::new();
-    for node in md.0.iter() {
-        match node {
-            MdNode::Paragraph(nodes) => lines.push(render_paragraph(nodes)),
-            MdNode::Code(code) => lines.extend(render_code(code).into_iter()),
-            MdNode::BlockQuote(block) => lines.push(Line::styled(
-                block,
-                GruvboxColor::light_2().full_style(GruvboxColor::dark_1()),
-            )),
-            MdNode::InlineCode(code) => lines.push(Line::styled(
-                code,
-                GruvboxColor::light_2().full_style(GruvboxColor::dark_1()),
-            )),
-            MdNode::Emphasis(text) => lines.push(Line::styled(text, Style::new().italic())),
-            MdNode::Strong(text) => lines.push(Line::styled(text, Style::new().bold())),
-            MdNode::Heading(text) => lines.push(Line::raw(text)),
-            MdNode::Text(text) => lines.push(Line::raw(text)),
-            MdNode::Break => {}
-            // TODO: No idea...
-            MdNode::List(nodes) => todo!(),
-            // TODO: Mark for hydration
-            MdNode::Link(_, _) => todo!(),
-            // TODO: Not sure how to support this yet
-            MdNode::ThematicBreak => {}
-        }
-    }
-    frame.render_widget(
-        Paragraph::new(lines)
-            .block(
-                Block::new()
-                    .title(padded_title(
-                        title,
-                        Style::new()
-                            .bold()
-                            .fg(GruvboxColor::light_4().to_color())
-                            .bg(GruvboxColor::dark_3().to_color()),
-                    ))
-                    .title_alignment(Alignment::Center)
-                    .borders(Borders::all()),
-            )
-            .wrap(Wrap { trim: false }),
-        rect,
-    );
-    rect.y += rect.height;
-    rect
-}
-
-pub fn padded_title(title: &str, style: Style) -> Title {
-    vec![
-        Span::from(" "),
-        Span::styled(" ", style),
-        Span::styled(title, style),
-        Span::styled(" ", style),
-        Span::from(" "),
-    ]
-    .into()
-}
-
-fn render_paragraph(nodes: &[MdNode]) -> Line<'_> {
-    let mut spans = Vec::with_capacity(nodes.len());
-    for node in nodes.iter() {
-        match node {
-            MdNode::BlockQuote(s) => spans.push(Span::styled(s, GruvboxColor::dark_1().bg_style())),
-            MdNode::InlineCode(s) => spans.push(Span::styled(s, GruvboxColor::dark_1().bg_style())),
-            MdNode::Emphasis(s) => spans.push(Span::styled(s, Style::new().italic())),
-            MdNode::Link(s, _) => spans.push(Span::styled(
-                s,
-                GruvboxColor::blue().fg_style().to_hydrate(),
-            )),
-            MdNode::Strong(s) => spans.push(Span::styled(s, Style::new().bold())),
-            MdNode::Text(s) => spans.push(Span::raw(s)),
-            // TODO: Dunno yet
-            MdNode::List(_) => todo!(),
-            MdNode::ThematicBreak => todo!(),
-            MdNode::Break => todo!(),
-            // These won't happen
-            MdNode::Heading(_) | MdNode::Paragraph(_) | MdNode::Code(_) => {}
-        }
-    }
-    Line::from(spans)
-}
-
-fn render_code(code: &ParsedCode) -> Vec<Line> {
-    let mut digest = Vec::new();
-    let mut spans = Vec::with_capacity(code.0.len());
-    for (txt, (fg, _)) in &code.0 {
-        console_log("Rendering code item:");
-        let mut iter = txt.split('\n');
-        if let Some(span) = iter.next() {
-            console_debug(span);
-            spans.push(Span::styled(span, fg.full_style(GruvboxColor::dark_3())))
-        }
-        for line in iter {
-            console_debug(line);
-            let old = std::mem::take(&mut spans);
-            digest.push(Line::from(old));
-            spans.push(Span::styled(line, fg.full_style(GruvboxColor::dark_3())))
-        }
-    }
-    if !spans.is_empty() {
-        digest.push(Line::from(spans));
-    }
-    digest
 }

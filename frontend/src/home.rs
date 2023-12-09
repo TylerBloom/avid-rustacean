@@ -1,7 +1,11 @@
 use ratatui::{prelude::*, widgets::*};
 use yew::Context;
 
-use crate::{app::{CursorMap, TermApp}, console_debug, console_log, terminal::{get_window_size, DehydratedSpan}};
+use crate::{
+    app::{CursorMap, TermApp},
+    console_debug, console_log,
+    terminal::{get_window_size, DehydratedSpan},
+};
 
 #[derive(Debug, PartialEq)]
 pub struct Home {}
@@ -12,15 +16,22 @@ impl Home {
     }
 
     pub fn hydrate(&self, ctx: &Context<TermApp>, _span: &mut DehydratedSpan) {
-        // TODO: Hydrate as needed
     }
 
-    pub fn draw(&self, chunk: Rect, frame: &mut Frame) -> Rect {
+    pub fn length(&self) -> Option<usize> {
+        None
+    }
+
+    pub fn selected(&self) -> Option<usize> {
+        None
+    }
+
+    pub fn draw(&self, chunk: Rect, frame: &mut Frame) {
         draw_screen(chunk, frame)
     }
 }
 
-fn draw_screen(rect: Rect, frame: &mut Frame) -> Rect {
+fn draw_screen(rect: Rect, frame: &mut Frame) {
     // Words made "loooong" to demonstrate line breaking.
     let s = "Veeeeeeeeeeeeeeeery    loooooooooooooooooong   striiiiiiiiiiiiiiiiiiiiiiiiiing.   ";
     let mut long_line = s.repeat((rect.width as usize) / s.len() + 4);
@@ -42,12 +53,7 @@ fn draw_screen(rect: Rect, frame: &mut Frame) -> Rect {
         ])
         .split(area);
 
-    let digest = Rect {
-        x: 0,
-        y: chunks.last().unwrap().y + chunks.last().unwrap().height,
-        width: rect.width,
-        height: 0,
-    };
+    let digest = chunks.last().unwrap().y + chunks.last().unwrap().height;
 
     let text = vec![
         Line::from("This is a line "),
@@ -99,6 +105,4 @@ fn draw_screen(rect: Rect, frame: &mut Frame) -> Rect {
         .alignment(Alignment::Center)
         .wrap(Wrap { trim: true });
     frame.render_widget(paragraph, chunks[3]);
-
-    digest
 }

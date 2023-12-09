@@ -11,7 +11,7 @@ use crate::posts::Post;
 #[derive(Debug, Clone)]
 pub struct AppState {
     posts: Arc<RwLock<HashMap<String, (String, Markdown)>>>,
-    projects: Arc<RwLock<HashMap<String, Markdown>>>,
+    projects: Arc<RwLock<HashMap<String, (String, Markdown)>>>,
 }
 
 impl AppState {
@@ -31,13 +31,13 @@ impl AppState {
     }
 
     /// Attempts to create a post and returns if it already exists.
-    pub fn create_project(&self, name: String, body: Markdown) {
-        self.projects.write().unwrap().insert(name, body);
+    pub fn create_project(&self, name: String, summary: String, body: Markdown) {
+        self.projects.write().unwrap().insert(name, (summary, body));
     }
 
     /// Attempts to retrieve a post from the app state.
     pub fn get_project(&self, name: &str) -> Option<Markdown> {
-        self.projects.read().unwrap().get(name).cloned()
+        self.projects.read().unwrap().get(name).map(|(_, b)| b.clone())
     }
 
     /// Attempts to retrieve a post from the app state.
@@ -47,6 +47,15 @@ impl AppState {
             .unwrap()
             .get(title)
             .map(|(_, md)| md.clone())
+    }
+
+    pub fn get_project_summaries(&self) -> Vec<(String, String)> {
+        self.projects
+            .read()
+            .unwrap()
+            .iter()
+            .map(|(t, (s, _))| (t.clone(), s.clone()))
+            .collect()
     }
 
     pub fn get_post_summaries(&self) -> Vec<(String, String)> {

@@ -11,6 +11,7 @@ use crate::{
     posts::{Post, PostMessage},
     project::{AllProjects, AllProjectsMessage, Project, ProjectMessage},
     terminal::{get_window_size, DehydratedSpan, NeedsHydration},
+    utils::{ScrollRef, padded_title},
     Route, TERMINAL,
 };
 use derive_more::From;
@@ -37,9 +38,15 @@ pub struct TermAppProps {
     pub body: AppBodyProps,
 }
 
+pub struct AppBody {
+    inner: AppBodyInner,
+    // TODO: Rename to scroll
+    scroll: ScrollRef,
+}
+
 /// The different main sections the user might find themselves in.
-#[derive(Debug, PartialEq)]
-pub enum AppBody {
+#[derive(Debug, PartialEq, From)]
+enum AppBodyInner {
     Home(Home),
     AllProjects(AllProjects),
     Project(Project),
@@ -48,73 +55,151 @@ pub enum AppBody {
 }
 
 impl AppBody {
-    fn draw(&self, chunk: Rect, frame: &mut Frame) -> Rect {
+    fn new<I: Into<AppBodyInner>>(inner: I) -> Self {
+        Self {
+            inner: inner.into(),
+            scroll: ScrollRef::new(0, 0),
+        }
+    }
+
+    fn swap_inner<I: Into<AppBodyInner>>(&mut self, inner: I) {
+        self.inner = inner.into();
+        self.scroll.set_view_start(0);
+    }
+
+    fn draw(&self, chunk: Rect, frame: &mut Frame) {
+        if let Some(sel) = self.inner.selected() {
+            let view_start = self.scroll.view_start();
+            if sel < view_start {
+                self.scroll.set_view_start(sel);
+            } else if sel > view_start + self.scroll.view_length().saturating_sub(3) {
+                let length = self.scroll.view_length();
+                self.scroll
+                    .set_view_start(sel.saturating_sub(length.saturating_sub(3)));
+            }
+        }
+        self.inner.draw(&self.scroll, chunk, frame);
+        self.scroll.render_scroll(
+            frame,
+            Scrollbar::default()
+                .orientation(ScrollbarOrientation::VerticalRight)
+                .begin_symbol(Some("↑"))
+                .end_symbol(Some("↓")),
+            chunk,
+        );
+    }
+
+    fn hydrate(&self, ctx: &Context<TermApp>, span: &mut DehydratedSpan) {
+        self.inner.hydrate(ctx, span)
+    }
+
+    fn update(&mut self, ctx: &Context<TermApp>, msg: ComponentMsg, map: &mut CursorMap) {
+        self.inner.update(ctx, &self.scroll, msg, map)
+    }
+
+    fn handle_scroll(&mut self, dir: bool) {
+        self.inner.handle_scroll(dir);
+        if dir {
+            self.scroll.next()
+        } else {
+            self.scroll.prev()
+        }
+    }
+
+    fn handle_motion(&mut self, motion: Motion, map: &CursorMap) {
+        self.inner.handle_motion(motion, map)
+    }
+
+    fn handle_enter(&mut self, ctx: &Context<TermApp>, map: &CursorMap) {
+        self.inner.handle_enter(ctx, map)
+    }
+}
+
+impl AppBodyInner {
+    fn draw(&self, scroll: &ScrollRef, chunk: Rect, frame: &mut Frame) {
         match self {
-            AppBody::Home(home) => home.draw(chunk, frame),
-            AppBody::AllProjects(projects) => projects.draw(chunk, frame),
-            AppBody::Project(proj) => proj.draw(chunk, frame),
-            AppBody::Blog(blog) => blog.draw(chunk, frame),
-            AppBody::Post(post) => post.draw(chunk, frame),
+            Self::Home(home) => home.draw(chunk, frame),
+            Self::AllProjects(projects) => projects.draw(scroll.view_start(), chunk, frame),
+            Self::Project(proj) => proj.draw(scroll.view_start(), chunk, frame),
+            Self::Blog(blog) => blog.draw(chunk, frame),
+            Self::Post(post) => post.draw(scroll, chunk, frame),
+        }
+    }
+
+    /// Returns the line number of the currently selected item.
+    fn selected(&self) -> Option<usize> {
+        match self {
+            AppBodyInner::Home(home) => home.selected(),
+            AppBodyInner::AllProjects(projects) => projects.selected(),
+            AppBodyInner::Project(project) => project.selected(),
+            AppBodyInner::Blog(blog) => blog.selected(),
+            AppBodyInner::Post(post) => post.selected(),
         }
     }
 
     fn hydrate(&self, ctx: &Context<TermApp>, span: &mut DehydratedSpan) {
         match self {
-            AppBody::Home(home) => home.hydrate(ctx, span),
-            AppBody::AllProjects(projects) => projects.hydrate(ctx, span),
-            AppBody::Project(proj) => proj.hydrate(ctx, span),
-            AppBody::Blog(blog) => blog.hydrate(ctx, span),
-            AppBody::Post(post) => post.hydrate(ctx, span),
+            Self::Home(home) => home.hydrate(ctx, span),
+            Self::AllProjects(projects) => projects.hydrate(ctx, span),
+            Self::Project(proj) => proj.hydrate(ctx, span),
+            Self::Blog(blog) => blog.hydrate(ctx, span),
+            Self::Post(post) => post.hydrate(ctx, span),
         }
     }
 
-    fn update(&mut self, ctx: &Context<TermApp>, msg: ComponentMsg, map: &mut CursorMap) {
+    fn update(
+        &mut self,
+        ctx: &Context<TermApp>,
+        scroll: &ScrollRef,
+        msg: ComponentMsg,
+        map: &mut CursorMap,
+    ) {
         match (self, msg) {
-            (AppBody::AllProjects(body), ComponentMsg::AllProjects(msg)) => {
-                body.update(ctx, msg, map)
+            (Self::AllProjects(body), ComponentMsg::AllProjects(msg)) => {
+                body.update(ctx, scroll, msg, map)
             }
-            (AppBody::Project(body), ComponentMsg::Project(msg)) => body.update(ctx, msg, map),
-            (AppBody::Blog(body), ComponentMsg::Blog(msg)) => body.update(ctx, msg, map),
-            (AppBody::Post(body), ComponentMsg::Post(msg)) => body.update(ctx, msg, map),
+            (Self::Project(body), ComponentMsg::Project(msg)) => body.update(ctx, scroll, msg, map),
+            (Self::Blog(body), ComponentMsg::Blog(msg)) => body.update(ctx, scroll, msg, map),
+            (Self::Post(body), ComponentMsg::Post(msg)) => body.update(ctx, msg, map),
             _ => unreachable!("How did you get here? Open a PR, please"),
         }
     }
 
     fn handle_scroll(&mut self, dir: bool) {
         match self {
-            AppBody::Home(home) => {}
-            AppBody::AllProjects(projects) => projects.handle_scroll(dir),
-            AppBody::Blog(blog) => blog.handle_scroll(dir),
-            AppBody::Project(proj) => proj.handle_scroll(dir),
-            AppBody::Post(post) => post.handle_scroll(dir),
+            Self::Home(home) => {}
+            Self::AllProjects(projects) => projects.handle_scroll(dir),
+            Self::Blog(blog) => blog.handle_scroll(dir),
+            Self::Project(proj) => proj.handle_scroll(dir),
+            Self::Post(post) => post.handle_scroll(dir),
         }
     }
 
     fn handle_motion(&mut self, motion: Motion, map: &CursorMap) {
         match self {
-            AppBody::AllProjects(projects) => projects.handle_motion(motion, map),
-            AppBody::Blog(blog) => blog.handle_motion(motion, map),
-            AppBody::Home(home) => {}
-            AppBody::Project(proj) => {}
-            AppBody::Post(post) => {}
+            Self::AllProjects(projects) => projects.handle_motion(motion, map),
+            Self::Blog(blog) => blog.handle_motion(motion, map),
+            Self::Home(home) => {}
+            Self::Project(proj) => {}
+            Self::Post(post) => {}
         }
     }
 
     fn handle_enter(&mut self, ctx: &Context<TermApp>, map: &CursorMap) {
         match self {
-            AppBody::AllProjects(_) => {
+            Self::AllProjects(_) => {
                 let nav = ctx.link().navigator().unwrap();
                 let name = map.get_hovering().to_owned();
                 nav.push(&Route::Project { name });
             }
-            AppBody::Blog(_) => {
+            Self::Blog(_) => {
                 let nav = ctx.link().navigator().unwrap();
                 let name = map.get_hovering().to_owned();
                 nav.push(&Route::Post { name });
             }
-            AppBody::Home(_) => {}
-            AppBody::Project(_) => {}
-            AppBody::Post(_) => {}
+            Self::Home(_) => {}
+            Self::Project(_) => {}
+            Self::Post(_) => {}
         }
     }
 }
@@ -131,13 +216,14 @@ pub enum AppBodyProps {
 
 impl AppBodyProps {
     fn create_body(self, ctx: &Context<TermApp>, map: &mut CursorMap) -> AppBody {
-        match self {
-            AppBodyProps::Home => AppBody::Home(Home::create(map)),
-            AppBodyProps::AllProjects => AppBody::AllProjects(AllProjects::create(ctx, map)),
-            AppBodyProps::Project(name) => AppBody::Project(Project::create(name, ctx, map)),
-            AppBodyProps::Blog => AppBody::Blog(Blog::create(ctx, map)),
-            AppBodyProps::Post(name) => AppBody::Post(Post::create(name, ctx, map)),
-        }
+        let inner = match self {
+            AppBodyProps::Home => AppBodyInner::Home(Home::create(map)),
+            AppBodyProps::AllProjects => AppBodyInner::AllProjects(AllProjects::create(ctx, map)),
+            AppBodyProps::Project(name) => AppBodyInner::Project(Project::create(name, ctx, map)),
+            AppBodyProps::Blog => AppBodyInner::Blog(Blog::create(ctx, map)),
+            AppBodyProps::Post(name) => AppBodyInner::Post(Post::create(name, ctx, map)),
+        };
+        AppBody::new(inner)
     }
 }
 
@@ -172,27 +258,18 @@ pub enum ComponentMsg {
 impl TermApp {
     fn draw(&self, area: Rect, frame: &mut Frame) {
         let (width, height) = get_window_size();
-        let chunk = Rect {
-            x: 0,
-            y: 0,
-            width: area.width,
-            height: 3,
-        };
-        self.draw_header(chunk, frame);
-        let chunk = Rect {
-            x: 0,
-            y: 3,
-            width: area.width,
-            height: area.height.saturating_sub(6),
-        };
-        let body = self.body.draw(chunk, frame);
-        let chunk = Rect {
-            x: 0,
-            y: body.y,
-            width: area.width,
-            height: 3,
-        };
-        self.draw_footer(chunk, frame);
+        let chunks = Layout::new(
+            Direction::Vertical,
+            [
+                Constraint::Min(3),
+                Constraint::Percentage(100),
+                Constraint::Min(3),
+            ],
+        )
+        .split(area);
+        self.draw_header(chunks[0], frame);
+        self.body.draw(chunks[1], frame);
+        self.draw_footer(chunks[2], frame);
     }
 
     fn draw_header(&self, rect: Rect, frame: &mut Frame) {
@@ -202,16 +279,21 @@ impl TermApp {
             Line::styled("Blog", GruvboxColor::default_style().to_hydrate()),
         ];
         let mut tabs = Tabs::new(titles)
-            .block(Block::default().borders(Borders::ALL))
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title(padded_title("The Avid Rustacean".to_owned(), Style::new()))
+                    .title_alignment(Alignment::Center),
+            )
             .style(GruvboxColor::teal().full_style(GruvboxColor::dark_2()))
             .highlight_style(GruvboxColor::green().full_style(GruvboxColor::dark_3()));
         console_debug(self.cursor_map.get_position());
         let index = match self.cursor_map.get_position() {
             (x, 0) => x,
-            _ => match &self.body {
-                AppBody::Home(_) => 0,
-                AppBody::AllProjects(_) | AppBody::Project(_) => 1,
-                AppBody::Blog(_) | AppBody::Post(_) => 2,
+            _ => match &self.body.inner {
+                AppBodyInner::Home(_) => 0,
+                AppBodyInner::AllProjects(_) | AppBodyInner::Project(_) => 1,
+                AppBodyInner::Blog(_) | AppBodyInner::Post(_) => 2,
             },
         };
         tabs = tabs.select(index);
@@ -314,32 +396,34 @@ impl Component for TermApp {
             TermAppMsg::Entered => match self.cursor_map.get_position() {
                 (0, 0) => {
                     ctx.link().navigator().unwrap().push(&Route::Home);
-                    self.body = AppBody::Home(Home::create(&mut self.cursor_map));
+                    self.body.swap_inner(Home::create(&mut self.cursor_map));
                 }
                 (1, 0) => {
                     ctx.link().navigator().unwrap().push(&Route::AllProjects);
-                    self.body =
-                        AppBody::AllProjects(AllProjects::create(ctx, &mut self.cursor_map));
+                    self.body
+                        .swap_inner(AllProjects::create(ctx, &mut self.cursor_map));
                 }
                 (2, 0) => {
                     ctx.link().navigator().unwrap().push(&Route::Blog);
-                    self.body = AppBody::Blog(Blog::create(ctx, &mut self.cursor_map));
+                    self.body
+                        .swap_inner(Blog::create(ctx, &mut self.cursor_map));
                 }
-                _ => match &self.body {
-                    AppBody::AllProjects(_) => {
+                _ => match &self.body.inner {
+                    AppBodyInner::AllProjects(_) => {
                         let nav = ctx.link().navigator().unwrap();
                         let name = self.cursor_map.get_hovering().to_owned();
                         nav.push(&Route::Project { name: name.clone() });
                         self.cursor_map.clear_after(1);
-                        self.body =
-                            AppBody::Project(Project::create(name, ctx, &mut self.cursor_map));
+                        self.body
+                            .swap_inner(Project::create(name, ctx, &mut self.cursor_map));
                     }
-                    AppBody::Blog(_) => {
+                    AppBodyInner::Blog(_) => {
                         let nav = ctx.link().navigator().unwrap();
                         let name = self.cursor_map.get_hovering().to_owned();
                         nav.push(&Route::Post { name: name.clone() });
                         self.cursor_map.clear_after(1);
-                        self.body = AppBody::Post(Post::create(name, ctx, &mut self.cursor_map));
+                        self.body
+                            .swap_inner(Post::create(name, ctx, &mut self.cursor_map));
                     }
                     _ => {}
                 },
@@ -378,13 +462,11 @@ impl Component for TermApp {
         let mut term = TERMINAL.term();
         let area = term.size().unwrap();
         term.draw(|frame| self.draw(area, frame)).unwrap();
-        term.backend_mut().hydrate(|span| {
-            match span.text().trim() {
-                "Home" => span.on_click(ctx.link().callback(|_| AppBodyProps::Home)),
-                "Projects" => span.on_click(ctx.link().callback(|_| AppBodyProps::AllProjects)),
-                "Blog" => span.on_click(ctx.link().callback(|_| AppBodyProps::Blog)),
-                _ => self.body.hydrate(ctx, span),
-            }
+        term.backend_mut().hydrate(|span| match span.text().trim() {
+            "Home" => span.on_click(ctx.link().callback(|_| AppBodyProps::Home)),
+            "Projects" => span.on_click(ctx.link().callback(|_| AppBodyProps::AllProjects)),
+            "Blog" => span.on_click(ctx.link().callback(|_| AppBodyProps::Blog)),
+            _ => self.body.hydrate(ctx, span),
         })
     }
 }

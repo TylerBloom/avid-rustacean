@@ -9,10 +9,8 @@ use crate::{
     console_log,
     palette::{GruvboxColor, GruvboxExt},
     terminal::{DehydratedSpan, NeedsHydration},
-    Route, HOST_ADDRESS,
+    Route, HOST_ADDRESS, utils::ScrollRef,
 };
-
-static SCROLL_STATE: Mutex<Option<ScrollbarState>> = Mutex::new(None);
 
 #[derive(Debug, PartialEq)]
 pub struct Blog {
@@ -41,6 +39,10 @@ impl Blog {
         }
     }
 
+    pub fn selected(&self) -> Option<usize> {
+        None
+    }
+
     pub fn hydrate(&self, ctx: &Context<TermApp>, span: &mut DehydratedSpan) {
         for (name, _, _) in self.summaries.iter() {
             if span.text() == name {
@@ -61,7 +63,7 @@ impl Blog {
         }
     }
 
-    pub fn update(&mut self, ctx: &Context<TermApp>, msg: BlogMessage, map: &mut CursorMap) {
+    pub fn update(&mut self, ctx: &Context<TermApp>, scroll: &ScrollRef, msg: BlogMessage, map: &mut CursorMap) {
         match msg {
             BlogMessage::PostSummaries(summaries) => {
                 map.clear_after(1);
@@ -96,7 +98,7 @@ impl Blog {
         }
     }
 
-    pub fn draw(&self, mut rect: Rect, frame: &mut Frame) -> Rect {
+    pub fn draw(&self, mut rect: Rect, frame: &mut Frame) {
         let widget = Paragraph::new(
             self.summaries
                 .iter()
@@ -106,18 +108,6 @@ impl Blog {
         .alignment(Alignment::Center)
         .block(Block::new().borders(Borders::all()));
         frame.render_widget(widget, rect);
-        let mut state = SCROLL_STATE.lock().unwrap();
-        state.insert(ScrollbarState::new(100));
-        frame.render_stateful_widget(
-            Scrollbar::default()
-                .orientation(ScrollbarOrientation::VerticalRight)
-                .begin_symbol(Some("↑"))
-                .end_symbol(Some("↓")),
-            rect,
-            state.as_mut().unwrap(),
-        );
-        rect.y += rect.height;
-        rect
     }
 }
 

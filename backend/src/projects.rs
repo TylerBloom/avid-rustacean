@@ -11,16 +11,17 @@ use crate::state::AppState;
 #[derive(Debug, PartialEq, Eq, Hash, Serialize, Deserialize, Clone)]
 pub struct Project {
     name: String,
+    summary: String,
     body: String,
 }
 
 pub async fn create_project(
     State(state): State<AppState>,
-    Json(Project { name, body }): Json<Project>,
+    Json(Project { name, body, summary }): Json<Project>,
 ) -> (StatusCode, Json<Option<Markdown>>) {
     match body.parse::<Markdown>() {
         Ok(body) => {
-            state.create_project(name, body.clone());
+            state.create_project(name, summary, body.clone());
             (StatusCode::OK, Json(Some(body)))
         }
         Err(_) => (StatusCode::BAD_REQUEST, Json(None)),
@@ -38,21 +39,7 @@ pub async fn get_projects(
 }
 
 pub async fn get_all_projects(
-    State(_state): State<AppState>,
+    State(state): State<AppState>,
 ) -> (StatusCode, Json<Vec<(String, String)>>) {
-    println!("Got projects request!");
-    let data = [
-        ("Squire", "The tournament service that in pure Rust."),
-        (
-            "SquireBot",
-            "The progenitor of Squire and the starting point of my Rust journey.",
-        ),
-        (
-            "Troupe",
-            "An actor library that I created from my work with Squire.",
-        ),
-        ("Avid Rustacean", "The blog that you're reading right now!!"),
-    ];
-    let data = (0..100).map(|i| (format!("{}", data[i % 4].0), data[i % 4].1.to_owned()));
-    (StatusCode::OK, Json(data.collect()))
+    (StatusCode::OK, Json(state.get_project_summaries()))
 }
