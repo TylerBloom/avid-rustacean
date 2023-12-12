@@ -3,15 +3,13 @@ use std::{
     sync::{Arc, RwLock},
 };
 
-use avid_rustacean_model::Markdown;
+use avid_rustacean_model::*;
 use serde::{Deserialize, Serialize};
-
-use crate::posts::Post;
 
 #[derive(Debug, Clone)]
 pub struct AppState {
-    posts: Arc<RwLock<HashMap<String, (String, Markdown)>>>,
-    projects: Arc<RwLock<HashMap<String, (String, Markdown)>>>,
+    posts: Arc<RwLock<HashMap<String, Post>>>,
+    projects: Arc<RwLock<HashMap<String, Project>>>,
 }
 
 impl AppState {
@@ -23,47 +21,46 @@ impl AppState {
     }
 
     /// Attempts to create a post and returns if it already exists.
-    pub fn create_post(&self, title: String, summary: String, body: Markdown) {
+    pub fn create_post(&self, post: Post) {
         self.posts
             .write()
             .unwrap()
-            .insert(title.clone(), (summary, body));
+            .insert(post.summary.title.clone(), post);
     }
 
     /// Attempts to create a post and returns if it already exists.
-    pub fn create_project(&self, name: String, summary: String, body: Markdown) {
-        self.projects.write().unwrap().insert(name, (summary, body));
-    }
-
-    /// Attempts to retrieve a post from the app state.
-    pub fn get_project(&self, name: &str) -> Option<Markdown> {
-        self.projects.read().unwrap().get(name).map(|(_, b)| b.clone())
-    }
-
-    /// Attempts to retrieve a post from the app state.
-    pub fn get_post(&self, title: &str) -> Option<Markdown> {
-        self.posts
-            .read()
+    pub fn create_project(&self, project: Project) {
+        self.projects
+            .write()
             .unwrap()
-            .get(title)
-            .map(|(_, md)| md.clone())
+            .insert(project.summary.name.clone(), project);
     }
 
-    pub fn get_project_summaries(&self) -> Vec<(String, String)> {
+    /// Attempts to retrieve a post from the app state.
+    pub fn get_project(&self, name: &str) -> Option<Project> {
+        self.projects.read().unwrap().get(name).cloned()
+    }
+
+    /// Attempts to retrieve a post from the app state.
+    pub fn get_post(&self, title: &str) -> Option<Post> {
+        self.posts.read().unwrap().get(title).cloned()
+    }
+
+    pub fn get_project_summaries(&self) -> Vec<ProjectSummary> {
         self.projects
             .read()
             .unwrap()
-            .iter()
-            .map(|(t, (s, _))| (t.clone(), s.clone()))
+            .values()
+            .map(|proj| proj.summary.clone())
             .collect()
     }
 
-    pub fn get_post_summaries(&self) -> Vec<(String, String)> {
+    pub fn get_post_summaries(&self) -> Vec<PostSummary> {
         self.posts
             .read()
             .unwrap()
-            .iter()
-            .map(|(t, (s, _))| (t.clone(), s.clone()))
+            .values()
+            .map(|post| post.summary.clone())
             .collect()
     }
 }

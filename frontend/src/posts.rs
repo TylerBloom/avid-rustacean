@@ -7,10 +7,10 @@ use wasm_bindgen::prelude::Closure;
 use yew::prelude::*;
 
 use crate::{
-    app::{CursorMap, TermApp},
+    app::TermApp,
     console_debug, console_log,
     terminal::{get_window_size, DehydratedSpan},
-    utils::{render_markdown, Markdown, ScrollRef},
+    utils::{Markdown, ScrollRef},
     HOST_ADDRESS, TERMINAL,
 };
 
@@ -25,7 +25,7 @@ pub struct Post {
 
 #[derive(Debug, PartialEq)]
 pub enum PostMessage {
-    Post(Markdown),
+    Post(avid_rustacean_model::Post),
 }
 
 #[derive(Debug, PartialEq, Deserialize, Default, Clone)]
@@ -34,20 +34,15 @@ pub struct PostData {
 }
 
 impl Post {
-    pub fn create(name: String, ctx: &Context<TermApp>, map: &mut CursorMap) -> Self {
+    pub fn create(name: String, ctx: &Context<TermApp>) -> Self {
         let mut real_name = String::with_capacity(name.len());
         url_escape::decode_to_string(name, &mut real_name);
         let cp_name = real_name.clone();
         ctx.link().send_future(async move {
             let post =
                 match reqwest::get(format!("http{HOST_ADDRESS}/api/v1/posts/{cp_name}")).await {
-                    Ok(resp) => Markdown::new(
-                        cp_name,
-                        resp.json::<avid_rustacean_model::Markdown>()
-                            .await
-                            .unwrap_or_default(),
-                    ),
-                    Err(e) => Markdown::default(),
+                    Ok(resp) => resp.json().await.unwrap_or_default(),
+                    Err(e) => avid_rustacean_model::Post::default(),
                 };
             PostMessage::Post(post)
         });
@@ -63,7 +58,7 @@ impl Post {
     }
 
     pub fn hydrate(&self, ctx: &Context<TermApp>, span: &mut DehydratedSpan) {
-        // TODO: Hydrate as needed...
+        self.body.hydrate(ctx, span)
     }
 
     pub fn handle_scroll(&mut self, dir: bool) {
@@ -74,16 +69,10 @@ impl Post {
         }
     }
 
-    pub fn update(
-        &mut self,
-        ctx: &Context<TermApp>,
-        msg: PostMessage,
-        map: &mut CursorMap,
-    ) {
-        map.clear_after(1);
+    pub fn update(&mut self, ctx: &Context<TermApp>, msg: PostMessage) {
         match msg {
-            PostMessage::Post(data) => {
-                self.body = data;
+            PostMessage::Post(post) => {
+                self.body = Markdown::new(post.summary.title.clone(), post.body);
             }
         }
     }

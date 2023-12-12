@@ -1,31 +1,38 @@
-use std::sync::Mutex;
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Mutex,
+};
 
+use avid_rustacean_model::PostSummary;
 use ratatui::{prelude::*, widgets::*};
 use yew::Context;
 use yew_router::prelude::*;
 
 use crate::{
-    app::{AppBodyProps, CursorMap, Motion, TermApp, TermAppMsg},
-    console_log,
+    app::{AppBodyProps, Motion, TermApp, TermAppMsg},
+    console_debug, console_log,
     palette::{GruvboxColor, GruvboxExt},
     terminal::{DehydratedSpan, NeedsHydration},
-    Route, HOST_ADDRESS, utils::ScrollRef,
+    utils::{render_markdown, Markdown, MdLine, ScrollRef},
+    Route, HOST_ADDRESS,
 };
 
 #[derive(Debug, PartialEq)]
 pub struct Blog {
-    summaries: Vec<(String, String, bool)>,
+    summaries: Vec<(PostSummary, Vec<Line<'static>>)>,
+    titles: HashSet<String>,
+    links: HashMap<String, String>,
     scroll: u16,
 }
 
 #[derive(Debug)]
 pub enum BlogMessage {
-    PostSummaries(Vec<(String, String)>),
+    PostSummaries(Vec<PostSummary>),
     Clicked(String),
 }
 
 impl Blog {
-    pub fn create(ctx: &Context<TermApp>, map: &mut CursorMap) -> Self {
+    pub fn create(ctx: &Context<TermApp>) -> Self {
         ctx.link().send_future(async move {
             let summaries = match reqwest::get(format!("http{HOST_ADDRESS}/api/v1/posts")).await {
                 Ok(resp) => resp.json().await.unwrap_or_default(),
@@ -36,22 +43,20 @@ impl Blog {
         Self {
             scroll: 0,
             summaries: Vec::new(),
+            links: HashMap::new(),
+            titles: HashSet::new(),
         }
     }
 
-    pub fn selected(&self) -> Option<usize> {
-        None
-    }
-
     pub fn hydrate(&self, ctx: &Context<TermApp>, span: &mut DehydratedSpan) {
-        for (name, _, _) in self.summaries.iter() {
-            if span.text() == name {
-                let name = name.clone();
-                span.on_click(
-                    ctx.link()
-                        .callback(move |_| BlogMessage::Clicked(name.clone())),
-                );
-            }
+        if let Some(link) = self.links.get(span.text()) {
+            span.hyperlink(link.clone())
+        } else if self.titles.contains(span.text()) {
+            let title = span.text().to_owned();
+            span.on_click(
+                ctx.link()
+                    .callback(move |_| BlogMessage::Clicked(title.clone())),
+            );
         }
     }
 
@@ -63,15 +68,20 @@ impl Blog {
         }
     }
 
-    pub fn update(&mut self, ctx: &Context<TermApp>, scroll: &ScrollRef, msg: BlogMessage, map: &mut CursorMap) {
+    pub fn update(&mut self, ctx: &Context<TermApp>, msg: BlogMessage) {
         match msg {
             BlogMessage::PostSummaries(summaries) => {
-                map.clear_after(1);
                 self.summaries = summaries
                     .into_iter()
-                    .map(|(t, s)| {
-                        map.append_and_push(t.clone());
-                        (t, s, false)
+                    .map(|s| {
+                        self.titles.insert(s.title.clone());
+                        let lines = render_markdown(s.summary.clone(), &mut self.links)
+                            .into_iter()
+                            .filter_map(|l| match l {
+                                MdLine::Plain(l) => Some(l.alignment(Alignment::Left)),
+                                MdLine::Code(_) => None,
+                            });
+                        (s, lines.collect())
                     })
                     .collect();
             }
@@ -82,40 +92,50 @@ impl Blog {
         }
     }
 
-    pub fn handle_motion(&mut self, motion: Motion, map: &CursorMap) {
-        match map.get_position() {
-            (0, y) if y > 0 && y <= self.summaries.len() => {
-                self.summaries
-                    .iter_mut()
-                    .enumerate()
-                    .for_each(|(i, (_, _, sel))| *sel = i + 1 == y);
-            }
-            _ => {
-                self.summaries
-                    .iter_mut()
-                    .for_each(|(_, _, sel)| *sel = false);
-            }
+    pub fn draw(&self, scroll: &ScrollRef, mut rect: Rect, frame: &mut Frame) {
+        let width = rect.width.saturating_sub(6) as usize;
+        let mut lines = Vec::with_capacity(5 * self.summaries.len() + 1);
+        lines.push(
+            Line::styled(
+                "─".repeat(width),
+                GruvboxColor::default_style().to_hydrate(),
+            )
+            .alignment(Alignment::Center),
+        );
+        for (summary, md) in &self.summaries {
+            lines.push(
+                Line::styled(
+                    summary.title.clone(),
+                    GruvboxColor::teal()
+                        .fg_style()
+                        .to_hydrate()
+                        .add_modifier(Modifier::BOLD | Modifier::UNDERLINED),
+                )
+                .alignment(Alignment::Center),
+            );
+            lines.push(
+                Line::raw(format!(
+                    "Published on: {}",
+                    summary.create_on.format("%m/%d/%Y")
+                ))
+                .alignment(Alignment::Right),
+            );
+            lines.extend(md.iter().cloned());
+            lines.push(Line::raw("═".repeat(width)).alignment(Alignment::Center));
         }
-    }
-
-    pub fn draw(&self, mut rect: Rect, frame: &mut Frame) {
-        let widget = Paragraph::new(
-            self.summaries
-                .iter()
-                .map(|(t, _, sel)| get_line(t, *sel))
-                .collect::<Vec<_>>(),
-        )
-        .alignment(Alignment::Center)
-        .block(Block::new().borders(Borders::all()));
+        lines.pop();
+        lines.push(
+            Line::styled(
+                "─".repeat(width),
+                GruvboxColor::default_style().to_hydrate(),
+            )
+            .alignment(Alignment::Center),
+        );
+        let widget = Paragraph::new(lines)
+            .alignment(Alignment::Center)
+            .wrap(Wrap { trim: true })
+            .block(Block::new().borders(Borders::all()));
+        scroll.set_content_length(widget.line_count(rect.width.saturating_sub(2)));
         frame.render_widget(widget, rect);
     }
-}
-
-fn get_line(s: &str, selected: bool) -> Line {
-    let style = if selected {
-        GruvboxColor::green().full_style(GruvboxColor::dark_3())
-    } else {
-        GruvboxColor::default_style()
-    };
-    Line::styled(s, style.to_hydrate())
 }

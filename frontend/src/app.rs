@@ -9,9 +9,9 @@ use crate::{
     home::Home,
     palette::{GruvboxColor, GruvboxExt},
     posts::{Post, PostMessage},
-    project::{AllProjects, AllProjectsMessage, Project, ProjectMessage},
+    project::{AllProjects, AllProjectsMessage, ProjectMessage, ProjectView},
     terminal::{get_window_size, DehydratedSpan, NeedsHydration},
-    utils::{ScrollRef, padded_title},
+    utils::{padded_title, ScrollRef},
     Route, TERMINAL,
 };
 use derive_more::From;
@@ -26,8 +26,6 @@ use yew::prelude::*;
 /// including switching between tabs and tracking the cursor.
 
 pub struct TermApp {
-    /// The tracker for the cursor
-    cursor_map: CursorMap,
     /// The body of the UI
     body: AppBody,
 }
@@ -49,7 +47,7 @@ pub struct AppBody {
 enum AppBodyInner {
     Home(Home),
     AllProjects(AllProjects),
-    Project(Project),
+    Project(ProjectView),
     Blog(Blog),
     Post(Post),
 }
@@ -68,16 +66,6 @@ impl AppBody {
     }
 
     fn draw(&self, chunk: Rect, frame: &mut Frame) {
-        if let Some(sel) = self.inner.selected() {
-            let view_start = self.scroll.view_start();
-            if sel < view_start {
-                self.scroll.set_view_start(sel);
-            } else if sel > view_start + self.scroll.view_length().saturating_sub(3) {
-                let length = self.scroll.view_length();
-                self.scroll
-                    .set_view_start(sel.saturating_sub(length.saturating_sub(3)));
-            }
-        }
         self.inner.draw(&self.scroll, chunk, frame);
         self.scroll.render_scroll(
             frame,
@@ -93,8 +81,8 @@ impl AppBody {
         self.inner.hydrate(ctx, span)
     }
 
-    fn update(&mut self, ctx: &Context<TermApp>, msg: ComponentMsg, map: &mut CursorMap) {
-        self.inner.update(ctx, &self.scroll, msg, map)
+    fn update(&mut self, ctx: &Context<TermApp>, msg: ComponentMsg) {
+        self.inner.update(ctx, &self.scroll, msg)
     }
 
     fn handle_scroll(&mut self, dir: bool) {
@@ -105,14 +93,6 @@ impl AppBody {
             self.scroll.prev()
         }
     }
-
-    fn handle_motion(&mut self, motion: Motion, map: &CursorMap) {
-        self.inner.handle_motion(motion, map)
-    }
-
-    fn handle_enter(&mut self, ctx: &Context<TermApp>, map: &CursorMap) {
-        self.inner.handle_enter(ctx, map)
-    }
 }
 
 impl AppBodyInner {
@@ -120,20 +100,9 @@ impl AppBodyInner {
         match self {
             Self::Home(home) => home.draw(chunk, frame),
             Self::AllProjects(projects) => projects.draw(scroll.view_start(), chunk, frame),
-            Self::Project(proj) => proj.draw(scroll.view_start(), chunk, frame),
+            Self::Project(proj) => proj.draw(scroll, chunk, frame),
             Self::Blog(blog) => blog.draw(chunk, frame),
             Self::Post(post) => post.draw(scroll, chunk, frame),
-        }
-    }
-
-    /// Returns the line number of the currently selected item.
-    fn selected(&self) -> Option<usize> {
-        match self {
-            AppBodyInner::Home(home) => home.selected(),
-            AppBodyInner::AllProjects(projects) => projects.selected(),
-            AppBodyInner::Project(project) => project.selected(),
-            AppBodyInner::Blog(blog) => blog.selected(),
-            AppBodyInner::Post(post) => post.selected(),
         }
     }
 
@@ -147,20 +116,14 @@ impl AppBodyInner {
         }
     }
 
-    fn update(
-        &mut self,
-        ctx: &Context<TermApp>,
-        scroll: &ScrollRef,
-        msg: ComponentMsg,
-        map: &mut CursorMap,
-    ) {
+    fn update(&mut self, ctx: &Context<TermApp>, scroll: &ScrollRef, msg: ComponentMsg) {
         match (self, msg) {
             (Self::AllProjects(body), ComponentMsg::AllProjects(msg)) => {
-                body.update(ctx, scroll, msg, map)
+                body.update(ctx, msg)
             }
-            (Self::Project(body), ComponentMsg::Project(msg)) => body.update(ctx, scroll, msg, map),
-            (Self::Blog(body), ComponentMsg::Blog(msg)) => body.update(ctx, scroll, msg, map),
-            (Self::Post(body), ComponentMsg::Post(msg)) => body.update(ctx, msg, map),
+            (Self::Project(body), ComponentMsg::Project(msg)) => body.update(ctx, msg),
+            (Self::Blog(body), ComponentMsg::Blog(msg)) => body.update(ctx, msg),
+            (Self::Post(body), ComponentMsg::Post(msg)) => body.update(ctx, msg),
             _ => unreachable!("How did you get here? Open a PR, please"),
         }
     }
@@ -172,34 +135,6 @@ impl AppBodyInner {
             Self::Blog(blog) => blog.handle_scroll(dir),
             Self::Project(proj) => proj.handle_scroll(dir),
             Self::Post(post) => post.handle_scroll(dir),
-        }
-    }
-
-    fn handle_motion(&mut self, motion: Motion, map: &CursorMap) {
-        match self {
-            Self::AllProjects(projects) => projects.handle_motion(motion, map),
-            Self::Blog(blog) => blog.handle_motion(motion, map),
-            Self::Home(home) => {}
-            Self::Project(proj) => {}
-            Self::Post(post) => {}
-        }
-    }
-
-    fn handle_enter(&mut self, ctx: &Context<TermApp>, map: &CursorMap) {
-        match self {
-            Self::AllProjects(_) => {
-                let nav = ctx.link().navigator().unwrap();
-                let name = map.get_hovering().to_owned();
-                nav.push(&Route::Project { name });
-            }
-            Self::Blog(_) => {
-                let nav = ctx.link().navigator().unwrap();
-                let name = map.get_hovering().to_owned();
-                nav.push(&Route::Post { name });
-            }
-            Self::Home(_) => {}
-            Self::Project(_) => {}
-            Self::Post(_) => {}
         }
     }
 }
@@ -215,13 +150,13 @@ pub enum AppBodyProps {
 }
 
 impl AppBodyProps {
-    fn create_body(self, ctx: &Context<TermApp>, map: &mut CursorMap) -> AppBody {
+    fn create_body(self, ctx: &Context<TermApp>) -> AppBody {
         let inner = match self {
-            AppBodyProps::Home => AppBodyInner::Home(Home::create(map)),
-            AppBodyProps::AllProjects => AppBodyInner::AllProjects(AllProjects::create(ctx, map)),
-            AppBodyProps::Project(name) => AppBodyInner::Project(Project::create(name, ctx, map)),
-            AppBodyProps::Blog => AppBodyInner::Blog(Blog::create(ctx, map)),
-            AppBodyProps::Post(name) => AppBodyInner::Post(Post::create(name, ctx, map)),
+            AppBodyProps::Home => AppBodyInner::Home(Home::create()),
+            AppBodyProps::AllProjects => AppBodyInner::AllProjects(AllProjects::create(ctx)),
+            AppBodyProps::Project(name) => AppBodyInner::Project(ProjectView::create(name, ctx)),
+            AppBodyProps::Blog => AppBodyInner::Blog(Blog::create(ctx)),
+            AppBodyProps::Post(name) => AppBodyInner::Post(Post::create(name, ctx)),
         };
         AppBody::new(inner)
     }
@@ -230,9 +165,7 @@ impl AppBodyProps {
 #[derive(Debug, From)]
 pub enum TermAppMsg {
     Resized,
-    Entered,
     Clicked(AppBodyProps),
-    SelectedMoved(Motion),
     // TODO: Replace bool with "up" or "down"
     // true = up, down = false
     Scrolled(bool),
@@ -274,42 +207,38 @@ impl TermApp {
 
     fn draw_header(&self, rect: Rect, frame: &mut Frame) {
         let titles = vec![
-            Line::styled("Home", GruvboxColor::default_style().to_hydrate()),
-            Line::styled("Projects", GruvboxColor::default_style().to_hydrate()),
-            Line::styled("Blog", GruvboxColor::default_style().to_hydrate()),
+            Line::styled("Home", GruvboxColor::teal().fg_style().to_hydrate()),
+            Line::styled("Projects", GruvboxColor::teal().fg_style().to_hydrate()),
+            Line::styled("Blog", GruvboxColor::teal().fg_style().to_hydrate()),
         ];
         let mut tabs = Tabs::new(titles)
             .block(
                 Block::default()
                     .borders(Borders::ALL)
-                    .title(padded_title("The Avid Rustacean".to_owned(), Style::new()))
+                    .title(padded_title(
+                        "The Avid Rustacean".to_owned(),
+                        GruvboxColor::burnt_orange().fg_style(),
+                    ))
                     .title_alignment(Alignment::Center),
             )
-            .style(GruvboxColor::teal().full_style(GruvboxColor::dark_2()))
-            .highlight_style(GruvboxColor::green().full_style(GruvboxColor::dark_3()));
-        console_debug(self.cursor_map.get_position());
-        let index = match self.cursor_map.get_position() {
-            (x, 0) => x,
-            _ => match &self.body.inner {
-                AppBodyInner::Home(_) => 0,
-                AppBodyInner::AllProjects(_) | AppBodyInner::Project(_) => 1,
-                AppBodyInner::Blog(_) | AppBodyInner::Post(_) => 2,
-            },
-        };
-        tabs = tabs.select(index);
-        if let (x, 0) = self.cursor_map.get_position() {
-            console_log("Selecting a tab...");
-        }
+            .style(GruvboxColor::orange().full_style(GruvboxColor::dark_2()));
         frame.render_widget(tabs, rect);
     }
 
     fn draw_footer(&self, rect: Rect, frame: &mut Frame) {
-        let style = GruvboxColor::default_fg().full_style(GruvboxColor::default_bg());
-        let widget = Paragraph::new("The footer")
-            .block(Block::new().borders(Borders::ALL))
-            .style(style)
-            .alignment(Alignment::Center);
-        frame.render_widget(widget, rect);
+        let line = Line::from(vec![
+            Span::styled("Email", GruvboxColor::blue().fg_style().to_hydrate()),
+            Span::from(" | "),
+            Span::styled("GitHub", GruvboxColor::blue().fg_style().to_hydrate()),
+            Span::from(" | "),
+            Span::styled("LinkdIn", GruvboxColor::blue().fg_style().to_hydrate()),
+            Span::from(" "),
+        ])
+        .alignment(Alignment::Right);
+        let mut tabs = Paragraph::new(line)
+            .block(Block::default().borders(Borders::ALL))
+            .style(GruvboxColor::orange().fg_style());
+        frame.render_widget(tabs, rect);
     }
 }
 
@@ -326,18 +255,6 @@ impl Component for TermApp {
             .into_js_value()
             .into();
         window.set_onresize(Some(&func));
-        // Bind a function to the "on-keypress" window event
-        let cb = ctx.link().callback(|()| TermAppMsg::Entered);
-        let func = move |event: JsValue| {
-            let event: KeyboardEvent = event.into();
-            if event.key() == "Enter" {
-                cb.emit(())
-            }
-        };
-        let func: Function = Closure::<dyn 'static + Fn(JsValue)>::new(func)
-            .into_js_value()
-            .into();
-        window.set_onkeypress(Some(&func));
         // Bind a function to the "on-wheel" window event
         let cb = ctx.link().callback(|msg: TermAppMsg| msg);
         let func = move |event: JsValue| {
@@ -352,87 +269,16 @@ impl Component for TermApp {
             .into_js_value()
             .into();
         window.set_onwheel(Some(&func));
-
-        // Bind a function to the "on-keydown" window event
-        let cb = ctx.link().callback(|msg: TermAppMsg| msg);
-        let func = move |event: JsValue| {
-            let event: KeyboardEvent = event.into();
-            match event.key().as_str() {
-                "ArrowUp" => cb.emit(TermAppMsg::SelectedMoved(Motion::Up)),
-                "ArrowDown" => cb.emit(TermAppMsg::SelectedMoved(Motion::Down)),
-                "ArrowLeft" => cb.emit(TermAppMsg::SelectedMoved(Motion::Left)),
-                "ArrowRight" => cb.emit(TermAppMsg::SelectedMoved(Motion::Right)),
-                _ => {}
-            }
-        };
-        let func: Function = Closure::<dyn 'static + Fn(JsValue)>::new(func)
-            .into_js_value()
-            .into();
-        window.set_onkeydown(Some(&func));
-        // Create cursor map
-        let mut cursor_map = CursorMap::new();
-        cursor_map.push(String::from("home"));
-        cursor_map.push(String::from("projects"));
-        cursor_map.push(String::from("blog"));
-        match ctx.props().body {
-            AppBodyProps::AllProjects => {
-                cursor_map.move_right();
-            }
-            AppBodyProps::Blog => {
-                cursor_map.move_left();
-            }
-            AppBodyProps::Home | AppBodyProps::Project(_) | AppBodyProps::Post(_) => {}
-        }
-
         // Create the viewer
-        let body = ctx.props().body.clone().create_body(ctx, &mut cursor_map);
-        Self { cursor_map, body }
+        let body = ctx.props().body.clone().create_body(ctx);
+        Self { body }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         console_log(format!("Got message: {msg:?}"));
         match msg {
             TermAppMsg::Resized => TERMINAL.term().backend_mut().resize_buffer(),
-            TermAppMsg::Entered => match self.cursor_map.get_position() {
-                (0, 0) => {
-                    ctx.link().navigator().unwrap().push(&Route::Home);
-                    self.body.swap_inner(Home::create(&mut self.cursor_map));
-                }
-                (1, 0) => {
-                    ctx.link().navigator().unwrap().push(&Route::AllProjects);
-                    self.body
-                        .swap_inner(AllProjects::create(ctx, &mut self.cursor_map));
-                }
-                (2, 0) => {
-                    ctx.link().navigator().unwrap().push(&Route::Blog);
-                    self.body
-                        .swap_inner(Blog::create(ctx, &mut self.cursor_map));
-                }
-                _ => match &self.body.inner {
-                    AppBodyInner::AllProjects(_) => {
-                        let nav = ctx.link().navigator().unwrap();
-                        let name = self.cursor_map.get_hovering().to_owned();
-                        nav.push(&Route::Project { name: name.clone() });
-                        self.cursor_map.clear_after(1);
-                        self.body
-                            .swap_inner(Project::create(name, ctx, &mut self.cursor_map));
-                    }
-                    AppBodyInner::Blog(_) => {
-                        let nav = ctx.link().navigator().unwrap();
-                        let name = self.cursor_map.get_hovering().to_owned();
-                        nav.push(&Route::Post { name: name.clone() });
-                        self.cursor_map.clear_after(1);
-                        self.body
-                            .swap_inner(Post::create(name, ctx, &mut self.cursor_map));
-                    }
-                    _ => {}
-                },
-            },
-            TermAppMsg::ComponentMsg(msg) => self.body.update(ctx, msg, &mut self.cursor_map),
-            TermAppMsg::SelectedMoved(motion) => {
-                self.cursor_map.motion(motion);
-                self.body.handle_motion(motion, &self.cursor_map);
-            }
+            TermAppMsg::ComponentMsg(msg) => self.body.update(ctx, msg),
             TermAppMsg::Scrolled(b) => self.body.handle_scroll(b),
             TermAppMsg::Clicked(page) => {
                 match &page {
@@ -452,7 +298,7 @@ impl Component for TermApp {
                         });
                     }
                 }
-                self.body = page.create_body(ctx, &mut self.cursor_map);
+                self.body = page.create_body(ctx);
             }
         }
         true
@@ -466,128 +312,13 @@ impl Component for TermApp {
             "Home" => span.on_click(ctx.link().callback(|_| AppBodyProps::Home)),
             "Projects" => span.on_click(ctx.link().callback(|_| AppBodyProps::AllProjects)),
             "Blog" => span.on_click(ctx.link().callback(|_| AppBodyProps::Blog)),
+            "Email" => span.hyperlink("mailto:tylerbloom2222@gmail.com".to_owned()),
+            "GitHub" => span.hyperlink("https://github.com/TylerBloom".to_owned()),
+            "LinkdIn" => {
+                span.hyperlink("https://www.linkedin.com/in/tyler-bloom-aba0a4156/".to_owned())
+            }
             _ => self.body.hydrate(ctx, span),
         })
-    }
-}
-
-/// The matrix of the relative directions the cursor can travel.
-pub struct CursorMap {
-    map: Vec<Vec<String>>,
-    cursor: (usize, usize),
-}
-
-impl CursorMap {
-    fn new() -> Self {
-        Self {
-            map: vec![Vec::new()],
-            cursor: (0, 0),
-        }
-    }
-
-    /// Adds a string to the end of the current line.
-    pub fn push(&mut self, next: String) {
-        self.map.last_mut().unwrap().push(next)
-    }
-
-    /// Adds a new, blank line onto which this item and all subsequent item will be pushed.
-    pub fn append_and_push(&mut self, next: String) {
-        self.map.push(Vec::new());
-        self.push(next)
-    }
-
-    /// Returns the current position of the cursor
-    pub fn get_position(&self) -> (usize, usize) {
-        self.cursor
-    }
-
-    /// Gets the value that the cursor is hovering over.
-    pub fn get_hovering(&self) -> &str {
-        &self.map[self.cursor.1][self.cursor.0]
-    }
-
-    /// Clears some number of rows from the map
-    pub fn clear_after(&mut self, index: usize) {
-        self.map.drain(index..);
-        if self.cursor.1 >= self.map.len() {
-            self.cursor.1 = self.map.len() - 1;
-        }
-
-        if self.cursor.0 >= self.map[self.cursor.1].len() {
-            self.cursor.0 = self.map[self.cursor.1].len() - 1;
-        }
-    }
-
-    /// Moves the cursor as close as possible to the give position. Cursor is moved to the last
-    /// row and/or column is the X and/or Y position is too large.
-    fn set_cursor(&mut self, (mut x, mut y): (usize, usize)) {
-        if y >= self.map.len() {
-            y = self.map.len() - 1;
-        }
-        self.cursor.1 = y;
-
-        if x >= self.map[y].len() {
-            x = self.map[y].len() - 1;
-        }
-        self.cursor.0 = x;
-    }
-
-    /// Moves the cursor with the given motion
-    fn motion(&mut self, motion: Motion) {
-        match motion {
-            Motion::Up => self.move_up(),
-            Motion::Down => self.move_down(),
-            Motion::Left => self.move_left(),
-            Motion::Right => self.move_right(),
-        }
-    }
-
-    /// Moves the cursor one position to the left, wrapping to the start of the prior line.
-    fn move_left(&mut self) {
-        match &mut self.cursor {
-            (0, 0) => {
-                self.cursor.1 = self.map.len() - 1;
-                self.cursor.0 = self.map[self.cursor.1].len() - 1;
-            }
-            (0, _) => {
-                self.cursor.1 -= 1;
-                self.cursor.0 = self.map[self.cursor.1].len() - 1;
-            }
-            (_, _) => {
-                self.cursor.0 -= 1;
-            }
-        }
-    }
-
-    /// Moves the cursor one position to the right, wrapping to the start of the next line.
-    fn move_right(&mut self) {
-        self.cursor.0 += 1;
-        if self.cursor.0 >= self.map[self.cursor.1].len() {
-            self.cursor.0 = 0;
-            self.cursor.1 += 1;
-            if self.cursor.1 >= self.map.len() {
-                self.cursor.1 = 0;
-            }
-        }
-    }
-
-    /// Moves the cursor one position up, wrapping to the end of the document.
-    fn move_up(&mut self) {
-        if self.cursor.1 == 0 {
-            self.cursor.1 = self.map.len() - 1;
-        } else {
-            self.cursor.1 -= 1;
-        }
-        self.cursor.0 = std::cmp::min(self.cursor.0, self.map[self.cursor.1].len() - 1);
-    }
-
-    /// Moves the cursor one position down, wrapping to the top of the document.
-    fn move_down(&mut self) {
-        self.cursor.1 += 1;
-        if self.cursor.1 >= self.map.len() {
-            self.cursor.1 = 0;
-        }
-        self.cursor.0 = std::cmp::min(self.cursor.0, self.map[self.cursor.1].len() - 1);
     }
 }
 

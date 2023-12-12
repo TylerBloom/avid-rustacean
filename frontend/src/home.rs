@@ -2,7 +2,7 @@ use ratatui::{prelude::*, widgets::*};
 use yew::Context;
 
 use crate::{
-    app::{CursorMap, TermApp},
+    app::TermApp,
     console_debug, console_log,
     terminal::{get_window_size, DehydratedSpan},
 };
@@ -11,18 +11,13 @@ use crate::{
 pub struct Home {}
 
 impl Home {
-    pub fn create(map: &mut CursorMap) -> Self {
+    pub fn create() -> Self {
         Self {}
     }
 
-    pub fn hydrate(&self, ctx: &Context<TermApp>, _span: &mut DehydratedSpan) {
-    }
+    pub fn hydrate(&self, ctx: &Context<TermApp>, _span: &mut DehydratedSpan) {}
 
     pub fn length(&self) -> Option<usize> {
-        None
-    }
-
-    pub fn selected(&self) -> Option<usize> {
         None
     }
 

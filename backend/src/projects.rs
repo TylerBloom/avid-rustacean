@@ -1,45 +1,49 @@
-use avid_rustacean_model::Markdown;
+use avid_rustacean_model::*;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
+    response::{IntoResponse, Response},
     Json,
 };
 use serde::{Deserialize, Serialize};
 
 use crate::state::AppState;
 
-#[derive(Debug, PartialEq, Eq, Hash, Serialize, Deserialize, Clone)]
-pub struct Project {
-    name: String,
-    summary: String,
-    body: String,
-}
-
 pub async fn create_project(
     State(state): State<AppState>,
-    Json(Project { name, body, summary }): Json<Project>,
-) -> (StatusCode, Json<Option<Markdown>>) {
-    match body.parse::<Markdown>() {
-        Ok(body) => {
-            state.create_project(name, summary, body.clone());
-            (StatusCode::OK, Json(Some(body)))
-        }
-        Err(_) => (StatusCode::BAD_REQUEST, Json(None)),
-    }
+    Json(CreateProject {
+        name,
+        body,
+        summary,
+    }): Json<CreateProject>,
+) -> Response {
+    let Ok(body) = body.parse::<Markdown>() else {
+        return StatusCode::BAD_REQUEST.into_response();
+    };
+    let Ok(summary) = summary.parse::<Markdown>() else {
+        return StatusCode::BAD_REQUEST.into_response();
+    };
+    let summary = ProjectSummary {
+        name,
+        summary,
+    };
+    let project = Project {
+        summary,
+        body: body.clone(),
+    };
+    state.create_project(project);
+    (StatusCode::OK, Json(body)).into_response()
 }
 
-pub async fn get_projects(
-    State(state): State<AppState>,
-    Path(name): Path<String>,
-) -> (StatusCode, Json<Markdown>) {
+pub async fn get_projects(State(state): State<AppState>, Path(name): Path<String>) -> Response {
     match state.get_project(&name) {
-        Some(proj) => (StatusCode::OK, Json(proj)),
-        None => (StatusCode::NOT_FOUND, Json(Markdown(Vec::new()))),
+        Some(proj) => (StatusCode::OK, Json(proj)).into_response(),
+        None => StatusCode::NOT_FOUND.into_response(),
     }
 }
 
 pub async fn get_all_projects(
     State(state): State<AppState>,
-) -> (StatusCode, Json<Vec<(String, String)>>) {
+) -> (StatusCode, Json<Vec<ProjectSummary>>) {
     (StatusCode::OK, Json(state.get_project_summaries()))
 }

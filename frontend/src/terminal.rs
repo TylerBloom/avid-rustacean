@@ -197,7 +197,7 @@ impl WebTerm {
                         } = interaction;
                         let mut element = create_span_with_callback(fg, bg, mods, &text, on_click);
                         if let Some(link) = hyperlink {
-                            element = html! { <a href = { link }> { element } </a> };
+                            element = html! { <a href = { link } target = "_blank" style="text-decoration:none"> { element } </a> };
                         }
                         inner.push(element);
                     }
@@ -233,7 +233,6 @@ impl Backend for WebTerm {
     }
 
     fn hide_cursor(&mut self) -> Result<()> {
-        // TODO: Actually implement
         Ok(())
     }
 
