@@ -1,7 +1,4 @@
-use std::{
-    collections::{HashMap, HashSet},
-    sync::Mutex,
-};
+use std::collections::{HashMap, HashSet};
 
 use avid_rustacean_model::PostSummary;
 use ratatui::{prelude::*, widgets::*};
@@ -9,11 +6,10 @@ use yew::Context;
 use yew_router::prelude::*;
 
 use crate::{
-    app::{AppBodyProps, Motion, TermApp, TermAppMsg},
-    console_debug, console_log,
+    app::{AppBodyProps, TermApp},
     palette::{GruvboxColor, GruvboxExt},
     terminal::{DehydratedSpan, NeedsHydration},
-    utils::{render_markdown, Markdown, MdLine, ScrollRef},
+    utils::{render_markdown, MdLine, ScrollRef},
     Route, HOST_ADDRESS,
 };
 
@@ -36,7 +32,7 @@ impl Blog {
         ctx.link().send_future(async move {
             let summaries = match reqwest::get(format!("http{HOST_ADDRESS}/api/v1/posts")).await {
                 Ok(resp) => resp.json().await.unwrap_or_default(),
-                Err(e) => Vec::new(),
+                Err(_) => Vec::new(),
             };
             BlogMessage::PostSummaries(summaries)
         });
@@ -92,7 +88,7 @@ impl Blog {
         }
     }
 
-    pub fn draw(&self, scroll: &ScrollRef, mut rect: Rect, frame: &mut Frame) {
+    pub fn draw(&self, scroll: &ScrollRef, rect: Rect, frame: &mut Frame<'_>) {
         let width = rect.width.saturating_sub(6) as usize;
         let mut lines = Vec::with_capacity(5 * self.summaries.len() + 1);
         lines.push(

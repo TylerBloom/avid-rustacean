@@ -1,11 +1,7 @@
 use ratatui::{prelude::*, widgets::*};
 use yew::Context;
 
-use crate::{
-    app::TermApp,
-    console_debug, console_log,
-    terminal::{get_window_size, DehydratedSpan},
-};
+use crate::{app::TermApp, terminal::DehydratedSpan};
 
 #[derive(Debug, PartialEq)]
 pub struct Home {}
@@ -15,18 +11,18 @@ impl Home {
         Self {}
     }
 
-    pub fn hydrate(&self, ctx: &Context<TermApp>, _span: &mut DehydratedSpan) {}
+    pub fn hydrate(&self, _ctx: &Context<TermApp>, _span: &mut DehydratedSpan) {}
 
     pub fn length(&self) -> Option<usize> {
         None
     }
 
-    pub fn draw(&self, chunk: Rect, frame: &mut Frame) {
+    pub fn draw(&self, chunk: Rect, frame: &mut Frame<'_>) {
         draw_screen(chunk, frame)
     }
 }
 
-fn draw_screen(rect: Rect, frame: &mut Frame) {
+fn draw_screen(rect: Rect, frame: &mut Frame<'_>) {
     // Words made "loooong" to demonstrate line breaking.
     let s = "Veeeeeeeeeeeeeeeery    loooooooooooooooooong   striiiiiiiiiiiiiiiiiiiiiiiiiing.   ";
     let mut long_line = s.repeat((rect.width as usize) / s.len() + 4);
@@ -47,8 +43,6 @@ fn draw_screen(rect: Rect, frame: &mut Frame) {
             Constraint::Percentage(25),
         ])
         .split(area);
-
-    let digest = chunks.last().unwrap().y + chunks.last().unwrap().height;
 
     let text = vec![
         Line::from("This is a line "),

@@ -1,4 +1,17 @@
-#![allow(unused, dead_code)]
+#![warn(rust_2018_idioms)]
+#![deny(
+    rustdoc::broken_intra_doc_links,
+    unreachable_pub,
+    unreachable_patterns,
+    unused,
+    unused_qualifications,
+    while_true,
+    trivial_casts,
+    trivial_bounds,
+    trivial_numeric_casts,
+    unconditional_panic,
+    clippy::all
+)]
 
 use std::{
     fmt::{Debug, Display},
@@ -7,18 +20,11 @@ use std::{
 };
 
 use app::{AppBodyProps, TermApp};
-use avid_rustacean_model::{GruvboxColor, Markdown, MdNode, ParsedCode};
-use posts::Post;
-use ratatui::{
-    prelude::*,
-    widgets::{block::Title, *},
-};
+use ratatui::prelude::*;
 use send_wrapper::SendWrapper;
 use terminal::WebTerm;
 use yew::{function_component, html, Html};
 use yew_router::prelude::*;
-
-use crate::{palette::GruvboxExt, terminal::NeedsHydration};
 
 pub mod app;
 pub mod blog;
@@ -26,8 +32,8 @@ pub mod home;
 pub mod palette;
 pub mod posts;
 pub mod project;
-pub mod utils;
 pub mod terminal;
+pub mod utils;
 
 pub static TERMINAL: Renderer = Renderer::new();
 

@@ -1,3 +1,18 @@
+#![warn(rust_2018_idioms)]
+#![deny(
+    rustdoc::broken_intra_doc_links,
+    unreachable_pub,
+    unreachable_patterns,
+    unused,
+    unused_qualifications,
+    while_true,
+    trivial_casts,
+    trivial_bounds,
+    trivial_numeric_casts,
+    unconditional_panic,
+    clippy::all
+)]
+
 use chrono::DateTime;
 pub use chrono::Utc;
 use serde::{Deserialize, Serialize};

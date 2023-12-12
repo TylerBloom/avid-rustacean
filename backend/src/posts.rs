@@ -1,11 +1,10 @@
 use avid_rustacean_model::*;
 use axum::{
-    extract::{Path, Query, State},
+    extract::{Path, State},
     http::StatusCode,
     response::{IntoResponse, Response},
     Json,
 };
-use serde::{Deserialize, Serialize};
 
 use crate::state::AppState;
 

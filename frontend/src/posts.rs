@@ -1,20 +1,13 @@
-use std::sync::Mutex;
-
-use js_sys::Function;
-use ratatui::{prelude::*, widgets::*};
+use ratatui::prelude::*;
 use serde::Deserialize;
-use wasm_bindgen::prelude::Closure;
 use yew::prelude::*;
 
 use crate::{
     app::TermApp,
-    console_debug, console_log,
-    terminal::{get_window_size, DehydratedSpan},
+    terminal::DehydratedSpan,
     utils::{Markdown, ScrollRef},
-    HOST_ADDRESS, TERMINAL,
+    HOST_ADDRESS,
 };
-
-static SCROLL_STATE: Mutex<Option<ScrollbarState>> = Mutex::new(None);
 
 #[derive(Debug, PartialEq)]
 pub struct Post {
@@ -42,7 +35,7 @@ impl Post {
             let post =
                 match reqwest::get(format!("http{HOST_ADDRESS}/api/v1/posts/{cp_name}")).await {
                     Ok(resp) => resp.json().await.unwrap_or_default(),
-                    Err(e) => avid_rustacean_model::Post::default(),
+                    Err(_) => avid_rustacean_model::Post::default(),
                 };
             PostMessage::Post(post)
         });
@@ -69,7 +62,7 @@ impl Post {
         }
     }
 
-    pub fn update(&mut self, ctx: &Context<TermApp>, msg: PostMessage) {
+    pub fn update(&mut self, _ctx: &Context<TermApp>, msg: PostMessage) {
         match msg {
             PostMessage::Post(post) => {
                 self.body = Markdown::new(post.summary.title.clone(), post.body);
@@ -77,7 +70,7 @@ impl Post {
         }
     }
 
-    pub fn draw(&self, scroll: &ScrollRef, mut rect: Rect, frame: &mut Frame) {
+    pub fn draw(&self, scroll: &ScrollRef, rect: Rect, frame: &mut Frame<'_>) {
         self.body.draw(scroll, rect, frame)
     }
 }

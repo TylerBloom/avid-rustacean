@@ -4,7 +4,6 @@ use std::{
 };
 
 use avid_rustacean_model::*;
-use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone)]
 pub struct AppState {

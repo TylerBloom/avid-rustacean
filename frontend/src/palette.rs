@@ -98,7 +98,7 @@ pub const fn indexed_gruvbox(i: u8) -> GruvboxColor {
 }
 
 pub const fn indexed_color(i: u8) -> Color {
-    assert!(0 <= 15);
+    assert!(i <= 15);
     Color::Indexed(i)
 }
 
@@ -124,6 +124,7 @@ pub const fn indexed_color_str(i: u8) -> &'static str {
     }
 }
 
+/*
 // Darks
 const BASE_0_RGB: Color = Color::Rgb(29, 32, 33);
 const BASE_1_RGB: Color = Color::Rgb(60, 56, 54);
@@ -145,3 +146,4 @@ const BASE_C_RGB: Color = Color::Rgb(184, 187, 38);
 const BASE_D_RGB: Color = Color::Rgb(142, 192, 124);
 const BASE_E_RGB: Color = Color::Rgb(131, 165, 152);
 const BASE_F_RGB: Color = Color::Rgb(211, 134, 155);
+*/

@@ -1,9 +1,4 @@
-use std::{
-    borrow::BorrowMut,
-    cell::{RefCell, RefMut},
-    collections::{HashMap, HashSet},
-    sync::Mutex,
-};
+use std::collections::{HashMap, HashSet};
 
 use avid_rustacean_model::{Project, ProjectSummary};
 use ratatui::{prelude::*, widgets::*};
@@ -11,8 +6,7 @@ use yew::Context;
 use yew_router::prelude::*;
 
 use crate::{
-    app::{AppBodyProps, Motion, TermApp, TermAppMsg},
-    console_debug, console_log,
+    app::{AppBodyProps, TermApp},
     palette::{GruvboxColor, GruvboxExt},
     terminal::{DehydratedSpan, NeedsHydration},
     utils::{render_markdown, Markdown, MdLine, ScrollRef},
@@ -74,7 +68,7 @@ impl ProjectView {
 
     pub fn handle_scroll(&mut self, _dir: bool) {}
 
-    pub fn update(&mut self, ctx: &Context<TermApp>, msg: ProjectMessage) {
+    pub fn update(&mut self, _ctx: &Context<TermApp>, msg: ProjectMessage) {
         match msg {
             ProjectMessage::Body(body) => {
                 self.body = Markdown::new(body.summary.name.clone(), body.body);
@@ -82,7 +76,7 @@ impl ProjectView {
         }
     }
 
-    pub fn draw(&self, scroll: &ScrollRef, mut rect: Rect, frame: &mut Frame) {
+    pub fn draw(&self, scroll: &ScrollRef, rect: Rect, frame: &mut Frame<'_>) {
         self.body.draw(scroll, rect, frame)
     }
 }
@@ -92,7 +86,7 @@ impl AllProjects {
         ctx.link().send_future(async move {
             let projects = match reqwest::get(format!("http{HOST_ADDRESS}/api/v1/projects")).await {
                 Ok(resp) => resp.json().await.unwrap_or_default(),
-                Err(e) => Vec::new(),
+                Err(_) => Vec::new(),
             };
             AllProjectsMessage::ProjectSummaries(projects)
         });
@@ -115,7 +109,7 @@ impl AllProjects {
         }
     }
 
-    pub fn handle_scroll(&mut self, dir: bool) {}
+    pub fn handle_scroll(&mut self, _dir: bool) {}
 
     pub fn update(&mut self, ctx: &Context<TermApp>, msg: AllProjectsMessage) {
         match msg {
@@ -145,7 +139,7 @@ impl AllProjects {
         }
     }
 
-    pub fn draw(&self, view_start: usize, mut rect: Rect, frame: &mut Frame) {
+    pub fn draw(&self, _view_start: usize, rect: Rect, frame: &mut Frame<'_>) {
         let width = rect.width.saturating_sub(6) as usize;
         let mut lines = Vec::with_capacity(5 * self.projects.len() + 1);
         lines.push(

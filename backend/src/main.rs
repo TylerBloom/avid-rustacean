@@ -1,13 +1,22 @@
-#![allow(unused, dead_code)]
+#![warn(rust_2018_idioms)]
+#![deny(
+    rustdoc::broken_intra_doc_links,
+    unreachable_pub,
+    unreachable_patterns,
+    unused,
+    unused_qualifications,
+    while_true,
+    trivial_casts,
+    trivial_bounds,
+    trivial_numeric_casts,
+    unconditional_panic,
+    clippy::all
+)]
 
 use axum::{
-    body::{Body, Bytes},
-    http::{HeaderMap, StatusCode},
-    response::{Html, Response},
-    routing::{get, patch, post, put},
+    routing::{get, post},
     Router,
 };
-use http::{header, HeaderValue};
 use mongodb::Database;
 
 pub mod posts;
@@ -20,7 +29,7 @@ use state::AppState;
 use tower_http::cors::CorsLayer;
 
 #[shuttle_runtime::main]
-async fn axum(#[shuttle_shared_db::MongoDb] db_conn: Database) -> shuttle_axum::ShuttleAxum {
+async fn axum(#[shuttle_shared_db::MongoDb] _db_conn: Database) -> shuttle_axum::ShuttleAxum {
     let state = AppState::new();
 
     let app = Router::new()

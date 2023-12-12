@@ -5,10 +5,10 @@ use ratatui::{
 };
 use std::{borrow::Cow, io::Result};
 use wasm_bindgen::JsValue;
-use web_sys::{Event, MouseEvent};
+use web_sys::MouseEvent;
 use yew::{html, Callback, Html};
 
-use crate::{console_debug, console_log, palette::*};
+use crate::palette::*;
 
 /// The backend used to take ratatui widgets and render them into HTML. This is achieved through a
 /// three-step rendering process.
@@ -100,10 +100,12 @@ impl Default for WebTerm {
 }
 
 const HYDRATION: Modifier = Modifier::REVERSED;
+/*
 const USED_MODS: Modifier = Modifier::BOLD
     .union(Modifier::UNDERLINED)
     .union(Modifier::ITALIC)
     .union(HYDRATION);
+*/
 
 impl WebTerm {
     /// The constructor for the terminal.
@@ -220,7 +222,7 @@ impl WebTerm {
 impl Backend for WebTerm {
     fn draw<'a, I>(&mut self, content: I) -> Result<()>
     where
-        I: Iterator<Item = (u16, u16, &'a ratatui::buffer::Cell)>,
+        I: Iterator<Item = (u16, u16, &'a Cell)>,
     {
         for (x, y, cell) in content {
             let y = y as usize;

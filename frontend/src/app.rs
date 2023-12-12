@@ -1,16 +1,16 @@
-use std::{cmp::Ordering, collections::HashMap, ops::Range};
+use std::cmp::Ordering;
 
 use yew::{Component, Context, Properties};
 use yew_router::scope_ext::RouterScopeExt;
 
 use crate::{
     blog::{Blog, BlogMessage},
-    console_debug, console_log,
+    console_log,
     home::Home,
     palette::{GruvboxColor, GruvboxExt},
     posts::{Post, PostMessage},
     project::{AllProjects, AllProjectsMessage, ProjectMessage, ProjectView},
-    terminal::{get_window_size, DehydratedSpan, NeedsHydration},
+    terminal::{DehydratedSpan, NeedsHydration},
     utils::{padded_title, ScrollRef},
     Route, TERMINAL,
 };
@@ -60,12 +60,7 @@ impl AppBody {
         }
     }
 
-    fn swap_inner<I: Into<AppBodyInner>>(&mut self, inner: I) {
-        self.inner = inner.into();
-        self.scroll.set_view_start(0);
-    }
-
-    fn draw(&self, chunk: Rect, frame: &mut Frame) {
+    fn draw(&self, chunk: Rect, frame: &mut Frame<'_>) {
         self.inner.draw(&self.scroll, chunk, frame);
         self.scroll.render_scroll(
             frame,
@@ -82,7 +77,7 @@ impl AppBody {
     }
 
     fn update(&mut self, ctx: &Context<TermApp>, msg: ComponentMsg) {
-        self.inner.update(ctx, &self.scroll, msg)
+        self.inner.update(ctx, msg)
     }
 
     fn handle_scroll(&mut self, dir: bool) {
@@ -96,12 +91,12 @@ impl AppBody {
 }
 
 impl AppBodyInner {
-    fn draw(&self, scroll: &ScrollRef, chunk: Rect, frame: &mut Frame) {
+    fn draw(&self, scroll: &ScrollRef, chunk: Rect, frame: &mut Frame<'_>) {
         match self {
             Self::Home(home) => home.draw(chunk, frame),
             Self::AllProjects(projects) => projects.draw(scroll.view_start(), chunk, frame),
             Self::Project(proj) => proj.draw(scroll, chunk, frame),
-            Self::Blog(blog) => blog.draw(chunk, frame),
+            Self::Blog(blog) => blog.draw(scroll, chunk, frame),
             Self::Post(post) => post.draw(scroll, chunk, frame),
         }
     }
@@ -116,11 +111,9 @@ impl AppBodyInner {
         }
     }
 
-    fn update(&mut self, ctx: &Context<TermApp>, scroll: &ScrollRef, msg: ComponentMsg) {
+    fn update(&mut self, ctx: &Context<TermApp>, msg: ComponentMsg) {
         match (self, msg) {
-            (Self::AllProjects(body), ComponentMsg::AllProjects(msg)) => {
-                body.update(ctx, msg)
-            }
+            (Self::AllProjects(body), ComponentMsg::AllProjects(msg)) => body.update(ctx, msg),
             (Self::Project(body), ComponentMsg::Project(msg)) => body.update(ctx, msg),
             (Self::Blog(body), ComponentMsg::Blog(msg)) => body.update(ctx, msg),
             (Self::Post(body), ComponentMsg::Post(msg)) => body.update(ctx, msg),
@@ -130,7 +123,7 @@ impl AppBodyInner {
 
     fn handle_scroll(&mut self, dir: bool) {
         match self {
-            Self::Home(home) => {}
+            Self::Home(_home) => {}
             Self::AllProjects(projects) => projects.handle_scroll(dir),
             Self::Blog(blog) => blog.handle_scroll(dir),
             Self::Project(proj) => proj.handle_scroll(dir),
@@ -189,8 +182,7 @@ pub enum ComponentMsg {
 }
 
 impl TermApp {
-    fn draw(&self, area: Rect, frame: &mut Frame) {
-        let (width, height) = get_window_size();
+    fn draw(&self, area: Rect, frame: &mut Frame<'_>) {
         let chunks = Layout::new(
             Direction::Vertical,
             [
@@ -205,13 +197,13 @@ impl TermApp {
         self.draw_footer(chunks[2], frame);
     }
 
-    fn draw_header(&self, rect: Rect, frame: &mut Frame) {
+    fn draw_header(&self, rect: Rect, frame: &mut Frame<'_>) {
         let titles = vec![
             Line::styled("Home", GruvboxColor::teal().fg_style().to_hydrate()),
             Line::styled("Projects", GruvboxColor::teal().fg_style().to_hydrate()),
             Line::styled("Blog", GruvboxColor::teal().fg_style().to_hydrate()),
         ];
-        let mut tabs = Tabs::new(titles)
+        let tabs = Tabs::new(titles)
             .block(
                 Block::default()
                     .borders(Borders::ALL)
@@ -225,7 +217,7 @@ impl TermApp {
         frame.render_widget(tabs, rect);
     }
 
-    fn draw_footer(&self, rect: Rect, frame: &mut Frame) {
+    fn draw_footer(&self, rect: Rect, frame: &mut Frame<'_>) {
         let line = Line::from(vec![
             Span::styled("Email", GruvboxColor::blue().fg_style().to_hydrate()),
             Span::from(" | "),
@@ -235,7 +227,7 @@ impl TermApp {
             Span::from(" "),
         ])
         .alignment(Alignment::Right);
-        let mut tabs = Paragraph::new(line)
+        let tabs = Paragraph::new(line)
             .block(Block::default().borders(Borders::ALL))
             .style(GruvboxColor::orange().fg_style());
         frame.render_widget(tabs, rect);

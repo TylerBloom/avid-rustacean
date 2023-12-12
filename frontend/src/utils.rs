@@ -1,19 +1,16 @@
-use std::{cell::RefCell, collections::HashMap, fmt::format};
+use std::{cell::RefCell, collections::HashMap};
 
 use avid_rustacean_model::{GruvboxColor, MdNode, ParsedCode};
 use ratatui::{
     prelude::*,
     widgets::{block::Title, *},
 };
-use serde::Serialize;
 use yew::Context;
 
 use crate::{
     app::TermApp,
-    console_debug, console_log,
     palette::GruvboxExt,
     terminal::{DehydratedSpan, NeedsHydration},
-    TERMINAL,
 };
 
 /// A container for managing the logic for a well-formated scroll bar.
@@ -41,7 +38,7 @@ impl ScrollRef {
     }
 
     /// Renders the scrollbar into a frame
-    pub fn render_scroll(&self, frame: &mut Frame, bar: Scrollbar, rect: Rect) {
+    pub fn render_scroll(&self, frame: &mut Frame<'_>, bar: Scrollbar<'_>, rect: Rect) {
         self.set_view_length(rect.height as usize);
         frame.render_stateful_widget(bar, rect, &mut self.state.borrow_mut());
     }
@@ -51,10 +48,6 @@ impl ScrollRef {
         *self.content_length.borrow_mut() = lines;
         let state = self.state.borrow_mut().content_length(lines);
         *self.state.borrow_mut() = state;
-    }
-
-    fn content_length(&self) -> usize {
-        *self.content_length.borrow()
     }
 
     /// Sets the length in the scrollbar state.
@@ -141,7 +134,6 @@ impl MdLine {
                         GruvboxColor::dark_3().bg_style(),
                     ));
                 }
-                console_debug(&code);
                 code
             }
         }
@@ -159,7 +151,7 @@ impl Markdown {
         }
     }
 
-    pub fn hydrate(&self, ctx: &Context<TermApp>, span: &mut DehydratedSpan) {
+    pub fn hydrate(&self, _ctx: &Context<TermApp>, span: &mut DehydratedSpan) {
         if let Some(link) = self.links.get(span.text()) {
             span.hyperlink(link.clone());
         }
@@ -183,7 +175,7 @@ impl Markdown {
             .wrap(Wrap { trim: false })
     }
 
-    pub fn draw(&self, scroll: &ScrollRef, mut rect: Rect, frame: &mut Frame) {
+    pub fn draw(&self, scroll: &ScrollRef, rect: Rect, frame: &mut Frame<'_>) {
         let chunks = Layout::new(
             Direction::Horizontal,
             [
@@ -195,7 +187,7 @@ impl Markdown {
         .split(rect);
         let para = self.get_para(chunks[1].width.saturating_sub(2) as usize);
         scroll.set_content_length(para.line_count(chunks[1].width.saturating_sub(2)));
-        let mut view_start = scroll.view_start();
+        let view_start = scroll.view_start();
         frame.render_widget(para.scroll((view_start as u16, 0)), chunks[1]);
     }
 }
