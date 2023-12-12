@@ -22,10 +22,7 @@ pub async fn create_project(
     let Ok(summary) = summary.parse::<Markdown>() else {
         return StatusCode::BAD_REQUEST.into_response();
     };
-    let summary = ProjectSummary {
-        name,
-        summary,
-    };
+    let summary = ProjectSummary { name, summary };
     let project = Project {
         summary,
         body: body.clone(),
