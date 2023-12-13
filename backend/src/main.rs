@@ -45,30 +45,37 @@ async fn axum(#[shuttle_shared_db::MongoDb] _db_conn: Database) -> shuttle_axum:
     #[cfg(not(debug_assertions))]
     let app = ui::inject_ui(app);
 
-    let app = app.layer(CorsLayer::permissive()).with_state(state).into();
-
-    Ok(app)
+    Ok(app.layer(CorsLayer::permissive()).with_state(state).into())
 }
 
 #[cfg(not(debug_assertions))]
-mod ui {
+pub mod ui {
+    use crate::state::AppState;
+    use axum::{
+        body::{Body, Bytes},
+        response::{Html, Response},
+        routing::get,
+        Router,
+    };
+    use http::{header, HeaderMap, HeaderValue, StatusCode};
+
     const INDEX_HTML: &str = include_str!("../../assets/index.html");
     const APP_WASM: &[u8] = include_bytes!("../../assets/avid-rustacean-frontend_bg.wasm");
     const APP_JS: &str = include_str!("../../assets/avid-rustacean-frontend.js");
 
-    fn inject_ui(router: Router) -> Router {
+    pub fn inject_ui(router: Router<AppState, Body>) -> Router<AppState, Body> {
         router
-            .route("/", get(ui::landing))
-            .route("/avid-rustacean-frontend_bg.wasm", get(ui::get_wasm))
-            .route("/avid-rustacean-frontend.js", get(ui::get_js))
-            .fallback(ui::landing)
+            .route("/", get(landing))
+            .route("/avid-rustacean-frontend_bg.wasm", get(get_wasm))
+            .route("/avid-rustacean-frontend.js", get(get_js))
+            .fallback(landing)
     }
 
-    pub async fn landing() -> Html<&'static str> {
+    async fn landing() -> Html<&'static str> {
         Html(INDEX_HTML)
     }
 
-    pub async fn get_wasm() -> Response<Body> {
+    async fn get_wasm() -> Response<Body> {
         let bytes = Bytes::copy_from_slice(APP_WASM);
         let body: Body = bytes.into();
 
@@ -81,7 +88,7 @@ mod ui {
             .unwrap()
     }
 
-    pub async fn get_js() -> (StatusCode, HeaderMap, &'static str) {
+    async fn get_js() -> (StatusCode, HeaderMap, &'static str) {
         let mut headers = HeaderMap::with_capacity(1);
         headers.insert(
             header::CONTENT_TYPE,
