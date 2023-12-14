@@ -4,9 +4,10 @@ use avid_rustacean_model::*;
 use axum::{extract::State, http::StatusCode, Json};
 use tracing::info;
 
-use crate::state::AppState;
+use crate::{state::AppState, AccessGaurd};
 
 pub async fn update_homepage(
+    AccessGaurd: AccessGaurd,
     State(state): State<AppState>,
     Json(UpdateHome { body }): Json<UpdateHome>,
 ) -> StatusCode {

@@ -9,9 +9,10 @@ use axum::{
 };
 use tracing::info;
 
-use crate::state::AppState;
+use crate::{state::AppState, AccessGaurd};
 
 pub async fn create_project(
+    AccessGaurd: AccessGaurd,
     State(state): State<AppState>,
     Json(CreateProject {
         name,

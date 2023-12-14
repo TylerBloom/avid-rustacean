@@ -13,25 +13,44 @@
     clippy::all
 )]
 
+use std::sync::OnceLock;
+
 use axum::{
+    async_trait,
+    extract::FromRequestParts,
     routing::{get, post},
     Router,
 };
+use http::{request::Parts, StatusCode};
 use mongodb::Database;
 
+pub mod home;
 pub mod posts;
 pub mod projects;
 pub mod state;
-pub mod home;
 
-use posts::*;
 use home::*;
+use posts::*;
 use projects::*;
+use shuttle_secrets::SecretStore;
 use state::AppState;
 use tower_http::cors::CorsLayer;
 
+pub static API_KEY: OnceLock<String> = OnceLock::new();
+
 #[shuttle_runtime::main]
-async fn axum(#[shuttle_shared_db::MongoDb] db_conn: Database) -> shuttle_axum::ShuttleAxum {
+async fn axum(
+    #[shuttle_secrets::Secrets] secret_store: SecretStore,
+    #[shuttle_shared_db::MongoDb] db_conn: Database,
+) -> shuttle_axum::ShuttleAxum {
+    API_KEY
+        .set(
+            secret_store
+                .get("API_KEY")
+                .expect("API_KEY not found in secrets!!"),
+        )
+        .unwrap();
+
     let state = AppState::new(db_conn);
     state.load().await;
 
@@ -52,6 +71,31 @@ async fn axum(#[shuttle_shared_db::MongoDb] db_conn: Database) -> shuttle_axum::
     let app = ui::inject_ui(app);
 
     Ok(app.layer(CorsLayer::permissive()).with_state(state).into())
+}
+
+/// The is a ZST used to signal that an API needs to be authorized. To do so, the [`API_KEY`] must
+/// be present in the `Authorization` header.
+pub struct AccessGaurd;
+
+#[async_trait]
+impl FromRequestParts<AppState> for AccessGaurd {
+    type Rejection = StatusCode;
+
+    async fn from_request_parts(
+        parts: &mut Parts,
+        _state: &AppState,
+    ) -> Result<Self, Self::Rejection> {
+        if let Some(true) = parts
+            .headers
+            .get("Authorization")
+            .and_then(|h| h.to_str().ok())
+            .map(|s| s == API_KEY.get().unwrap())
+        {
+            Ok(Self)
+        } else {
+            Err(StatusCode::UNAUTHORIZED)
+        }
+    }
 }
 
 #[cfg(not(debug_assertions))]

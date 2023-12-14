@@ -6,9 +6,9 @@ edition = "2021"
 [dependencies]
 avid-rustacean-model = { path = "../model", features = ["server"] }
 axum = { version = "0.6", features = ["macros"] }
-shuttle-runtime = { version = "0.31", features = [] }
-shuttle-shared-db = { version = "0.31", features = ["mongodb"] }
-shuttle-axum = { version = "0.31", features = [] }
+shuttle-runtime = { version = "0.35", features = [] }
+shuttle-shared-db = { version = "0.35", features = ["mongodb"] }
+shuttle-axum = { version = "0.35", features = [] }
 tokio = { version = "1.28", features = ["sync"] }
 serde = { version = "1.0", features = ["rc"] }
 serde_json = { version = "1.0" }
@@ -19,6 +19,7 @@ troupe = "0.1.0"
 tower-http = { version = "0.4.4", features = ["cors"] }
 http = { version = "0.2" }
 tracing = "0.1.40"
+shuttle-secrets = "0.35.1"
 
 [build-dependencies]
 flate2 = "1.0"
