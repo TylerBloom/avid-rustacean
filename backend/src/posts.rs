@@ -5,6 +5,7 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
+use tracing::info;
 
 use crate::state::AppState;
 
@@ -16,6 +17,7 @@ pub async fn create_post(
         body,
     }): Json<CreatePost>,
 ) -> (StatusCode, Json<Markdown>) {
+    info!("Creating post with title: {title:?}");
     let Ok(body) = body.parse::<Markdown>() else {
         return (StatusCode::BAD_REQUEST, Json(Markdown::default()));
     };
@@ -37,6 +39,7 @@ pub async fn create_post(
 }
 
 pub async fn get_post(State(state): State<AppState>, Path(title): Path<String>) -> Response {
+    info!("Getting post: {title:?}");
     match state.get_post(&title) {
         Some(post) => (StatusCode::OK, Json(post)).into_response(),
         None => StatusCode::NOT_FOUND.into_response(),
@@ -46,6 +49,7 @@ pub async fn get_post(State(state): State<AppState>, Path(title): Path<String>) 
 pub async fn get_post_summaries(
     State(state): State<AppState>,
 ) -> (StatusCode, Json<Vec<PostSummary>>) {
+    info!("Get post summaries...");
     let body = state.get_post_summaries();
     (StatusCode::OK, Json(body))
 }

@@ -1,8 +1,5 @@
 [workspace]
-members = [
-    "backend",
-    "model",
-]
+members = ["backend", "model"]
 
 resolver = "2"
 

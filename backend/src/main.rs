@@ -60,7 +60,7 @@ pub mod ui {
     use http::{header, HeaderMap, HeaderValue, StatusCode};
 
     const INDEX_HTML: &str = include_str!("../../assets/index.html");
-    const APP_WASM: &[u8] = include_bytes!("../../assets/avid-rustacean-frontend_bg.wasm");
+    const APP_WASM: &[u8] = include_bytes!("../../assets/avid-rustacean-frontend_bg.wasm.gz");
     const APP_JS: &str = include_str!("../../assets/avid-rustacean-frontend.js");
 
     pub fn inject_ui(router: Router<AppState, Body>) -> Router<AppState, Body> {
@@ -80,9 +80,7 @@ pub mod ui {
         let body: Body = bytes.into();
 
         Response::builder()
-            /*
             .header(header::CONTENT_ENCODING, "gzip") // Unzips the compressed file
-            */
             .header(header::CONTENT_TYPE, "application/wasm")
             .body(body)
             .unwrap()

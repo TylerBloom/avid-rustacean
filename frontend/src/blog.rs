@@ -130,7 +130,7 @@ impl Blog {
         let widget = Paragraph::new(lines)
             .alignment(Alignment::Center)
             .wrap(Wrap { trim: true })
-            .block(Block::new().borders(Borders::all()));
+            .block(Block::new().borders(Borders::all()).title("Blog"));
         scroll.set_content_length(widget.line_count(rect.width.saturating_sub(2)));
         frame.render_widget(widget, rect);
     }
