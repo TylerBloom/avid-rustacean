@@ -1,97 +1,89 @@
-use ratatui::{prelude::*, widgets::*};
+use std::collections::HashMap;
+
+use avid_rustacean_model::{GruvboxColor, HomePage};
+use ratatui::{
+    prelude::*,
+    widgets::{Block, Borders, Padding, Paragraph, Wrap},
+};
 use yew::Context;
 
-use crate::{app::TermApp, terminal::DehydratedSpan};
+use crate::{
+    app::{ComponentMsg, TermApp},
+    palette::GruvboxExt,
+    terminal::DehydratedSpan,
+    utils::{padded_title, render_markdown, MdLine, ScrollRef},
+    HOST_ADDRESS,
+};
 
 #[derive(Debug, PartialEq)]
-pub struct Home {}
+pub struct Home {
+    data: Paragraph<'static>,
+    links: HashMap<String, String>,
+    scroll: u16,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum HomeMessage {
+    Data(HomePage),
+}
 
 impl Home {
-    pub fn create() -> Self {
-        Self {}
+    pub fn create(ctx: &Context<TermApp>) -> Self {
+        ctx.link().send_future(async move {
+            let home = match reqwest::get(format!("http{HOST_ADDRESS}/api/v1/home")).await {
+                Ok(resp) => resp.json().await.unwrap_or_default(),
+                Err(_) => HomePage::default(),
+            };
+            ComponentMsg::Home(HomeMessage::Data(home))
+        });
+        Self {
+            data: Paragraph::default(),
+            links: HashMap::new(),
+            scroll: 0,
+        }
+    }
+
+    pub fn handle_scroll(&mut self, dir: bool) {
+        if dir {
+            self.scroll = self.scroll.saturating_add(1);
+        } else {
+            self.scroll = self.scroll.saturating_sub(1);
+        }
     }
 
     pub fn hydrate(&self, _ctx: &Context<TermApp>, _span: &mut DehydratedSpan) {}
 
-    pub fn length(&self) -> Option<usize> {
-        None
+    pub fn update(&mut self, msg: HomeMessage) {
+        match msg {
+            HomeMessage::Data(data) => {
+                let lines: Vec<_> = render_markdown(data.body, &mut self.links)
+                    .into_iter()
+                    .filter_map(|l| match l {
+                        MdLine::Plain(l) => Some(l),
+                        MdLine::Code(_) => None,
+                    })
+                    .collect();
+                self.data = Paragraph::new(lines)
+                    .wrap(Wrap { trim: true })
+                    .block(
+                        Block::new()
+                            .title(padded_title(
+                                "Home".into(),
+                                GruvboxColor::green().full_style(GruvboxColor::dark_4()),
+                            ))
+                            .borders(Borders::ALL)
+                            .padding(Padding::horizontal(10)),
+                    )
+                    .alignment(Alignment::Center);
+            }
+        }
     }
 
-    pub fn draw(&self, chunk: Rect, frame: &mut Frame<'_>) {
-        draw_screen(chunk, frame)
+    pub fn draw(&self, scroll: &ScrollRef, rect: Rect, frame: &mut Frame<'_>) {
+        scroll.set_content_length(self.data.line_count(rect.width.saturating_sub(2)));
+        frame.render_widget(
+            self.data.clone().scroll((scroll.view_start() as u16, 0)),
+            rect,
+        );
     }
-}
-
-fn draw_screen(rect: Rect, frame: &mut Frame<'_>) {
-    // Words made "loooong" to demonstrate line breaking.
-    let s = "Veeeeeeeeeeeeeeeery    loooooooooooooooooong   striiiiiiiiiiiiiiiiiiiiiiiiiing.   ";
-    let mut long_line = s.repeat((rect.width as usize) / s.len() + 4);
-    long_line.push('\n');
-
-    let area = Rect {
-        x: rect.x,
-        y: rect.y,
-        width: rect.width,
-        height: rect.height,
-    };
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-        ])
-        .split(area);
-
-    let text = vec![
-        Line::from("This is a line "),
-        Line::from("This is a line   ".red()),
-        Line::from("This is a line".on_blue()),
-        Line::from("This is a longer line".crossed_out()),
-        Line::from(long_line.on_green()),
-        Line::from("This is a line".green().italic()),
-        Line::from(vec![
-            "Masked text: ".into(),
-            Span::styled(
-                Masked::new("password", '*'),
-                Style::default().fg(Color::Red),
-            ),
-        ]),
-    ];
-
-    let create_block = |title| {
-        Block::default()
-            .borders(Borders::ALL)
-            .style(Style::default().fg(Color::Gray))
-            .title(Span::styled(
-                title,
-                Style::default().add_modifier(Modifier::BOLD),
-            ))
-    };
-
-    let paragraph = Paragraph::new(text.clone())
-        .style(Style::default().fg(Color::Gray))
-        .block(create_block("Default alignment (Left), no wrap"));
-    frame.render_widget(paragraph, chunks[0]);
-
-    let paragraph = Paragraph::new(text.clone())
-        .style(Style::default().fg(Color::Gray))
-        .block(create_block("Default alignment (Left), with wrap"))
-        .wrap(Wrap { trim: true });
-    frame.render_widget(paragraph, chunks[1]);
-
-    let paragraph = Paragraph::new(text.clone())
-        .style(Style::default().fg(Color::Gray))
-        .block(create_block("Right alignment, with wrap"))
-        .alignment(Alignment::Right)
-        .wrap(Wrap { trim: true });
-    frame.render_widget(paragraph, chunks[2]);
-
-    let paragraph = Paragraph::new(text)
-        .style(Style::default().fg(Color::Gray))
-        .block(create_block("Center alignment, with wrap, with scroll"))
-        .alignment(Alignment::Center)
-        .wrap(Wrap { trim: true });
-    frame.render_widget(paragraph, chunks[3]);
 }

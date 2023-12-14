@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use avid_rustacean_model::*;
 use axum::{
     extract::{Path, State},
@@ -34,7 +36,7 @@ pub async fn create_post(
         summary,
         body: body.clone(),
     };
-    state.create_post(post);
+    state.create_post(post).await;
     (StatusCode::OK, Json(body))
 }
 
@@ -48,7 +50,7 @@ pub async fn get_post(State(state): State<AppState>, Path(title): Path<String>) 
 
 pub async fn get_post_summaries(
     State(state): State<AppState>,
-) -> (StatusCode, Json<Vec<PostSummary>>) {
+) -> (StatusCode, Json<Arc<Vec<PostSummary>>>) {
     info!("Get post summaries...");
     let body = state.get_post_summaries();
     (StatusCode::OK, Json(body))

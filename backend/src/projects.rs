@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use avid_rustacean_model::*;
 use axum::{
     extract::{Path, State},
@@ -29,7 +31,7 @@ pub async fn create_project(
         summary,
         body: body.clone(),
     };
-    state.create_project(project);
+    state.create_project(project).await;
     (StatusCode::OK, Json(body)).into_response()
 }
 
@@ -43,7 +45,7 @@ pub async fn get_projects(State(state): State<AppState>, Path(name): Path<String
 
 pub async fn get_all_projects(
     State(state): State<AppState>,
-) -> (StatusCode, Json<Vec<ProjectSummary>>) {
+) -> (StatusCode, Json<Arc<Vec<ProjectSummary>>>) {
     info!("Get project summaries...");
     (StatusCode::OK, Json(state.get_project_summaries()))
 }

@@ -13,57 +13,16 @@
     clippy::all
 )]
 
-use chrono::DateTime;
 pub use chrono::Utc;
 use serde::{Deserialize, Serialize};
 
-/// A container for all of the data needed for the backend to create a post.
-/// (Only used by the blog-poster client).
-#[derive(Debug, PartialEq, Eq, Hash, Serialize, Deserialize, Clone)]
-pub struct CreatePost {
-    pub title: String,
-    pub summary: String,
-    pub body: String,
-}
+mod home;
+mod post;
+mod project;
 
-/// A container for all of the data needed for a post
-#[derive(Debug, PartialEq, Eq, Hash, Serialize, Deserialize, Clone, Default)]
-pub struct Post {
-    pub summary: PostSummary,
-    pub body: Markdown,
-}
-
-/// A container the summary of a post
-#[derive(Debug, PartialEq, Eq, Hash, Serialize, Deserialize, Clone, Default)]
-pub struct PostSummary {
-    pub title: String,
-    pub summary: Markdown,
-    pub create_on: DateTime<Utc>,
-    pub last_edit: Option<DateTime<Utc>>,
-}
-
-/// A container for all of the data needed for the backend to create a post.
-/// (Only used by the blog-poster client).
-#[derive(Debug, PartialEq, Eq, Hash, Serialize, Deserialize, Clone)]
-pub struct CreateProject {
-    pub name: String,
-    pub summary: String,
-    pub body: String,
-}
-
-/// A container for all of the data needed for a project
-#[derive(Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize, Clone)]
-pub struct Project {
-    pub summary: ProjectSummary,
-    pub body: Markdown,
-}
-
-/// A container the summary of a project
-#[derive(Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize, Clone)]
-pub struct ProjectSummary {
-    pub name: String,
-    pub summary: Markdown,
-}
+pub use home::*;
+pub use post::*;
+pub use project::*;
 
 /// The parsed representation of markdown pages. The parsing occurs on the backend when it receives
 /// a new project, blog post, or any updates to existing pages. Colorizing the markdown is task of

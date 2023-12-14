@@ -22,17 +22,23 @@ use mongodb::Database;
 pub mod posts;
 pub mod projects;
 pub mod state;
+pub mod home;
 
 use posts::*;
+use home::*;
 use projects::*;
 use state::AppState;
 use tower_http::cors::CorsLayer;
 
 #[shuttle_runtime::main]
-async fn axum(#[shuttle_shared_db::MongoDb] _db_conn: Database) -> shuttle_axum::ShuttleAxum {
-    let state = AppState::new();
+async fn axum(#[shuttle_shared_db::MongoDb] db_conn: Database) -> shuttle_axum::ShuttleAxum {
+    let state = AppState::new(db_conn);
+    state.load().await;
 
     let app = Router::new()
+        // Homepage-related routes
+        .route("/api/v1/home", post(update_homepage))
+        .route("/api/v1/home", get(get_homepage))
         // Post-related routes
         .route("/api/v1/posts", post(create_post))
         .route("/api/v1/posts", get(get_post_summaries))

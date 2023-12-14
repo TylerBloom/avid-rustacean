@@ -9,7 +9,7 @@ use crate::{
     app::{AppBodyProps, TermApp},
     palette::{GruvboxColor, GruvboxExt},
     terminal::{DehydratedSpan, NeedsHydration},
-    utils::{render_markdown, MdLine, ScrollRef},
+    utils::{render_markdown, MdLine, ScrollRef, padded_title},
     Route, HOST_ADDRESS,
 };
 
@@ -69,6 +69,7 @@ impl Blog {
             BlogMessage::PostSummaries(summaries) => {
                 self.summaries = summaries
                     .into_iter()
+                    .rev()
                     .map(|s| {
                         self.titles.insert(s.title.clone());
                         let lines = render_markdown(s.summary.clone(), &mut self.links)
@@ -130,7 +131,14 @@ impl Blog {
         let widget = Paragraph::new(lines)
             .alignment(Alignment::Center)
             .wrap(Wrap { trim: true })
-            .block(Block::new().borders(Borders::all()).title("Blog"));
+            .block(
+                Block::new()
+                    .title(padded_title(
+                        "Blog".into(),
+                        GruvboxColor::green().full_style(GruvboxColor::dark_4()),
+                    ))
+                    .borders(Borders::ALL),
+            );
         scroll.set_content_length(widget.line_count(rect.width.saturating_sub(2)));
         frame.render_widget(widget, rect);
     }

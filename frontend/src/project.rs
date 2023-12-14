@@ -9,7 +9,7 @@ use crate::{
     app::{AppBodyProps, TermApp},
     palette::{GruvboxColor, GruvboxExt},
     terminal::{DehydratedSpan, NeedsHydration},
-    utils::{render_markdown, Markdown, MdLine, ScrollRef},
+    utils::{padded_title, render_markdown, Markdown, MdLine, ScrollRef},
     Route, HOST_ADDRESS,
 };
 
@@ -24,7 +24,6 @@ pub struct AllProjects {
 pub enum AllProjectsMessage {
     ProjectSummaries(Vec<ProjectSummary>),
     Clicked(String),
-    Scrolled(bool),
 }
 
 #[derive(Debug, PartialEq)]
@@ -128,7 +127,6 @@ impl AllProjects {
                     })
                     .collect();
             }
-            AllProjectsMessage::Scrolled(b) => self.handle_scroll(b),
             AllProjectsMessage::Clicked(name) => {
                 ctx.link().send_message(AppBodyProps::Project(name.clone()));
                 ctx.link()
@@ -139,7 +137,7 @@ impl AllProjects {
         }
     }
 
-    pub fn draw(&self, _view_start: usize, rect: Rect, frame: &mut Frame<'_>) {
+    pub fn draw(&self, scroll: &ScrollRef, rect: Rect, frame: &mut Frame<'_>) {
         let width = rect.width.saturating_sub(6) as usize;
         let mut lines = Vec::with_capacity(5 * self.projects.len() + 1);
         lines.push(
@@ -174,7 +172,15 @@ impl AllProjects {
         let widget = Paragraph::new(lines)
             .alignment(Alignment::Center)
             .wrap(Wrap { trim: true })
-            .block(Block::new().borders(Borders::all()));
+            .block(
+                Block::new()
+                    .title(padded_title(
+                        "Projects".into(),
+                        GruvboxColor::green().full_style(GruvboxColor::dark_4()),
+                    ))
+                    .borders(Borders::ALL),
+            );
+        scroll.set_content_length(widget.line_count(rect.width.saturating_sub(2)));
         frame.render_widget(widget, rect);
     }
 }

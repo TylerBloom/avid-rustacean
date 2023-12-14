@@ -6,7 +6,7 @@ use yew_router::scope_ext::RouterScopeExt;
 use crate::{
     blog::{Blog, BlogMessage},
     console_log,
-    home::Home,
+    home::{Home, HomeMessage},
     palette::{GruvboxColor, GruvboxExt},
     posts::{Post, PostMessage},
     project::{AllProjects, AllProjectsMessage, ProjectMessage, ProjectView},
@@ -93,8 +93,8 @@ impl AppBody {
 impl AppBodyInner {
     fn draw(&self, scroll: &ScrollRef, chunk: Rect, frame: &mut Frame<'_>) {
         match self {
-            Self::Home(home) => home.draw(chunk, frame),
-            Self::AllProjects(projects) => projects.draw(scroll.view_start(), chunk, frame),
+            Self::Home(home) => home.draw(scroll, chunk, frame),
+            Self::AllProjects(projects) => projects.draw(scroll, chunk, frame),
             Self::Project(proj) => proj.draw(scroll, chunk, frame),
             Self::Blog(blog) => blog.draw(scroll, chunk, frame),
             Self::Post(post) => post.draw(scroll, chunk, frame),
@@ -113,6 +113,7 @@ impl AppBodyInner {
 
     fn update(&mut self, ctx: &Context<TermApp>, msg: ComponentMsg) {
         match (self, msg) {
+            (Self::Home(body), ComponentMsg::Home(msg)) => body.update(msg),
             (Self::AllProjects(body), ComponentMsg::AllProjects(msg)) => body.update(ctx, msg),
             (Self::Project(body), ComponentMsg::Project(msg)) => body.update(ctx, msg),
             (Self::Blog(body), ComponentMsg::Blog(msg)) => body.update(ctx, msg),
@@ -123,7 +124,7 @@ impl AppBodyInner {
 
     fn handle_scroll(&mut self, dir: bool) {
         match self {
-            Self::Home(_home) => {}
+            Self::Home(home) => {home.handle_scroll(dir)}
             Self::AllProjects(projects) => projects.handle_scroll(dir),
             Self::Blog(blog) => blog.handle_scroll(dir),
             Self::Project(proj) => proj.handle_scroll(dir),
@@ -145,7 +146,7 @@ pub enum AppBodyProps {
 impl AppBodyProps {
     fn create_body(self, ctx: &Context<TermApp>) -> AppBody {
         let inner = match self {
-            AppBodyProps::Home => AppBodyInner::Home(Home::create()),
+            AppBodyProps::Home => AppBodyInner::Home(Home::create(ctx)),
             AppBodyProps::AllProjects => AppBodyInner::AllProjects(AllProjects::create(ctx)),
             AppBodyProps::Project(name) => AppBodyInner::Project(ProjectView::create(name, ctx)),
             AppBodyProps::Blog => AppBodyInner::Blog(Blog::create(ctx)),
@@ -175,6 +176,7 @@ pub enum Motion {
 
 #[derive(Debug, From)]
 pub enum ComponentMsg {
+    Home(HomeMessage),
     AllProjects(AllProjectsMessage),
     Blog(BlogMessage),
     Project(ProjectMessage),
