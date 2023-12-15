@@ -6,7 +6,7 @@ use std::{
 use avid_rustacean_model::*;
 use futures::StreamExt;
 use mongodb::{Collection, Database};
-use tracing::error;
+use tracing::{error, warn};
 
 #[derive(Debug, Clone)]
 pub struct AppState {
@@ -42,7 +42,8 @@ impl AppState {
         if let Some(home) = table.find_one(None, None).await.unwrap() {
             *self.home.write().unwrap() = Arc::new(home);
         } else {
-            error!("Failed to find/deserialze home page!!");
+            warn!("Failed to find/deserialze home page!!");
+            *self.home.write().unwrap() = Arc::new(HomePage::default());
         }
 
         // Blog

@@ -9,7 +9,7 @@ use crate::{
     app::{AppBodyProps, TermApp},
     palette::{GruvboxColor, GruvboxExt},
     terminal::{DehydratedSpan, NeedsHydration},
-    utils::{render_markdown, MdLine, ScrollRef, padded_title},
+    utils::{padded_title, render_markdown, MdLine, ScrollRef},
     Route, HOST_ADDRESS,
 };
 

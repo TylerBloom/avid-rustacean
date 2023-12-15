@@ -40,9 +40,10 @@ pub static API_KEY: OnceLock<String> = OnceLock::new();
 
 #[shuttle_runtime::main]
 async fn axum(
-    #[shuttle_secrets::Secrets] secret_store: SecretStore,
     #[shuttle_shared_db::MongoDb] db_conn: Database,
+    #[shuttle_secrets::Secrets] _secret_store: SecretStore,
 ) -> shuttle_axum::ShuttleAxum {
+    /*
     API_KEY
         .set(
             secret_store
@@ -50,6 +51,7 @@ async fn axum(
                 .expect("API_KEY not found in secrets!!"),
         )
         .unwrap();
+    */
 
     let state = AppState::new(db_conn);
     state.load().await;
@@ -89,11 +91,13 @@ impl FromRequestParts<AppState> for AccessGaurd {
             .headers
             .get("Authorization")
             .and_then(|h| h.to_str().ok())
+            // TODO: Add in a check for the hashed header instead of directly comparing
             .map(|s| s == API_KEY.get().unwrap())
         {
             Ok(Self)
         } else {
-            Err(StatusCode::UNAUTHORIZED)
+            // TODO: This should return an error once the secrets are fixed
+            Ok(Self)
         }
     }
 }
