@@ -5,7 +5,7 @@ use std::{
 
 use avid_rustacean_model::*;
 use futures::StreamExt;
-use mongodb::{Collection, Database};
+use mongodb::{Collection, Database, bson::Document};
 use tracing::{error, warn};
 
 #[derive(Debug, Clone)]
@@ -133,6 +133,23 @@ impl AppState {
     /// Attempts to retrieve a post from the app state.
     pub fn get_post(&self, title: &str) -> Option<Arc<Post>> {
         self.posts.read().unwrap().get(title).cloned()
+    }
+
+    /// Attempts to delete a post
+    pub async fn delete_post(&self, title: &str) -> bool {
+        let Some(post) = self.posts.write().unwrap().remove(title) else {
+            return false;
+        };
+        let doc: Document = mongodb::bson::to_raw_document_buf(&post)
+            .unwrap()
+            .try_into()
+            .unwrap();
+        let _ = self.get_blog_table().delete_one(doc, None).await;
+        let mut lock = self.post_sums.write().unwrap();
+        let mut sums = Vec::clone(&lock);
+        sums.retain(|s| s.title != title);
+        *lock = Arc::new(sums);
+        true
     }
 
     pub fn get_post_summaries(&self) -> Arc<Vec<PostSummary>> {

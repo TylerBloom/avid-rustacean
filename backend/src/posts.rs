@@ -22,6 +22,7 @@ pub async fn create_post(
 ) -> (StatusCode, Json<Markdown>) {
     info!("Creating post with title: {title:?}");
     let Ok(body) = body.parse::<Markdown>() else {
+        println!("Failed to parse post body...");
         return (StatusCode::BAD_REQUEST, Json(Markdown::default()));
     };
     let Ok(summary) = summary.parse::<Markdown>() else {
@@ -43,9 +44,24 @@ pub async fn create_post(
 
 pub async fn get_post(State(state): State<AppState>, Path(title): Path<String>) -> Response {
     info!("Getting post: {title:?}");
+    let title = title.replace('-', " ");
     match state.get_post(&title) {
         Some(post) => (StatusCode::OK, Json(post)).into_response(),
         None => StatusCode::NOT_FOUND.into_response(),
+    }
+}
+
+pub async fn delete_post(
+    AccessGaurd: AccessGaurd,
+    State(state): State<AppState>,
+    Path(title): Path<String>,
+) -> StatusCode {
+    info!("Delete post: {title:?}");
+    let title = title.replace('-', " ");
+    if state.delete_post(&title).await {
+        StatusCode::OK
+    } else {
+        StatusCode::NOT_FOUND
     }
 }
 

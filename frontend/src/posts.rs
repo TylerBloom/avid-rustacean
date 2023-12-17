@@ -30,7 +30,7 @@ impl Post {
     pub fn create(name: String, ctx: &Context<TermApp>) -> Self {
         let mut real_name = String::with_capacity(name.len());
         url_escape::decode_to_string(name, &mut real_name);
-        let cp_name = real_name.clone();
+        let cp_name = real_name.replace(' ', "-");
         ctx.link().send_future(async move {
             let post =
                 match reqwest::get(format!("http{HOST_ADDRESS}/api/v1/posts/{cp_name}")).await {

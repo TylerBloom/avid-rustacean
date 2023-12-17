@@ -18,11 +18,12 @@ use std::sync::OnceLock;
 use axum::{
     async_trait,
     extract::FromRequestParts,
-    routing::{get, post},
+    routing::*,
     Router,
 };
 use http::{request::Parts, StatusCode};
 use mongodb::Database;
+use sha2::Digest;
 
 pub mod home;
 pub mod posts;
@@ -64,6 +65,7 @@ async fn axum(
         .route("/api/v1/posts", post(create_post))
         .route("/api/v1/posts", get(get_post_summaries))
         .route("/api/v1/posts/:name", get(get_post))
+        .route("/api/v1/posts/:name", delete(delete_post))
         // Project-related routes
         .route("/api/v1/projects", post(create_project))
         .route("/api/v1/projects", get(get_all_projects))
@@ -91,15 +93,22 @@ impl FromRequestParts<AppState> for AccessGaurd {
             .headers
             .get("Authorization")
             .and_then(|h| h.to_str().ok())
-            // TODO: Add in a check for the hashed header instead of directly comparing
-            .map(|s| s == API_KEY.get().unwrap())
+            .map(check_auth_header)
         {
             Ok(Self)
         } else {
-            // TODO: This should return an error once the secrets are fixed
-            Ok(Self)
+            Err(StatusCode::UNAUTHORIZED)
         }
     }
+}
+
+fn check_auth_header(header: &str) -> bool {
+    // The hashed API key
+    const KEY: [u8; 32] = hex_literal::hex!("445929267209c034d1e324834c17e0c8305df3dcb21d1710a639ac6ca08c648b");
+    // Hash the header
+    let mut hasher = sha2::Sha256::new();
+    hasher.update(header);
+    KEY[..] == hasher.finalize()[..]
 }
 
 #[cfg(not(debug_assertions))]

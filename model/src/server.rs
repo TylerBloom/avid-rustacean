@@ -93,7 +93,6 @@ fn nodes_to_string(nodes: &[Node]) -> String {
 /// Parses a Rust code block and highlights the syntax.
 fn parse_code(code: &str) -> Result<ParsedCode, MdError> {
     static GRUVBYTES: &[u8] = include_bytes!("../assets/gruvbox.dump");
-    println!("Parsing code block:\n{code:?}");
     let syntaxes = SyntaxSet::load_defaults_nonewlines();
     let theme = from_binary(GRUVBYTES);
     let mut hl = HighlightLines::new(syntaxes.find_syntax_by_name("Rust").unwrap(), &theme);
@@ -110,7 +109,11 @@ fn parse_code(code: &str) -> Result<ParsedCode, MdError> {
 }
 
 fn convert_style(style: Style) -> Result<(GruvboxColor, GruvboxColor), MdError> {
-    let Ok(fg) = style.foreground.try_into() else {
+    let fg = if let Ok(fg) = style.foreground.try_into() {
+        fg
+    } else if style.foreground == (Color { r: 146, g: 131, b: 116, a: 255 }) {
+        GruvboxColor::orange()
+    } else {
         return Err(MdError);
     };
     let Ok(bg) = style.background.try_into() else {
