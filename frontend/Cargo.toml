@@ -13,7 +13,7 @@ avid-rustacean-model = { path = "../model" }
 # Using my fork for now as I need access to the paragraph line count method that I implemented
 ratatui = { version = "0.24.1-alpha.6", default-features = false, features = ["all-widgets", "unstable-rendered-line-info"] }
 yew = { version = "0.20", features = ["csr"] }
-yew-router = { version = "0.17.0" }
+yew-router = { version = "0.18.0" }
 web-sys = { version = "0.3", features = ["Window", "Screen"] }
 wasm-bindgen = { version = "0.2" }
 js-sys = { version = "0.3" }
