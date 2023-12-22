@@ -11,7 +11,7 @@ const INDEX_HTML: &str = include_str!("../../assets/index.html");
 const APP_WASM: &[u8] = include_bytes!("../../assets/avid-rustacean-frontend_bg.wasm.gz");
 const APP_JS: &str = include_str!("../../assets/avid-rustacean-frontend.js");
 
-pub fn inject_ui(router: Router<AppState, Body>) -> Router<AppState, Body> {
+pub fn inject_ui(router: Router<AppState>) -> Router<AppState> {
     router
         .route("/", get(landing))
         .route("/avid-rustacean-frontend_bg.wasm", get(get_wasm))
