@@ -1,0 +1,42 @@
+name: Avid Rustacean CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Rust
+        uses: hecrj/setup-rust-action@v2
+        with:
+          rust-version: stable
+          components: rustfmt
+      - uses: actions/checkout@v4
+      - name: Fetch Trunk
+        uses: jetli/trunk-action@v0.4.0
+        with:
+          version: 'latest'
+      - run: cargo build --package model --verbose
+      - run: cargo test --package model --verbose
+      - run: wget -qO- https://github.com/thedodd/trunk/releases/download/v0.16.0/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
+      - run: pwd >> $GITHUB_PATH
+      - run: cargo build --manifest-path squire_web/Cargo.toml --verbose
+      - run: trunk build squire_web/index.html
+      - run: cargo build --package backend --verbose
+      - run: cargo test --package backend --verbose
+
+  deployment:
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: shuttle-hq/deploy-action@main
+        with:
+          deploy-key: ${{ secrets.SHUTTLE_API_KEY }}
