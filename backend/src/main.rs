@@ -15,16 +15,14 @@
 
 use std::sync::OnceLock;
 
-use axum::{
-    async_trait,
-    extract::FromRequestParts,
-    routing::*,
-    Router,
-};
+use axum::{async_trait, extract::FromRequestParts, routing::*, Json, Router};
 use http::{request::Parts, StatusCode};
 use mongodb::Database;
+use serde::Serialize;
 use sha2::Digest;
 
+#[cfg(not(debug_assertions))]
+pub mod assets;
 pub mod home;
 pub mod posts;
 pub mod projects;
@@ -38,6 +36,22 @@ use state::AppState;
 use tower_http::cors::CorsLayer;
 
 pub static API_KEY: OnceLock<String> = OnceLock::new();
+
+/// Returns data necessary for shields.io to construct a badge to monitor deployment
+#[derive(Debug, Serialize)]
+struct Badge {
+    schema_version: usize,
+    label: &'static str,
+    message: &'static str,
+}
+
+async fn badge_api() -> Json<Badge> {
+    Json(Badge {
+        schema_version: 1,
+        label: "Deployment",
+        message: "Active",
+    })
+}
 
 #[shuttle_runtime::main]
 async fn axum(
@@ -59,6 +73,8 @@ async fn axum(
 
     let app = Router::new()
         // Homepage-related routes
+        .route("/api/v1/badge", get(badge_api))
+        // Homepage-related routes
         .route("/api/v1/home", post(update_homepage))
         .route("/api/v1/home", get(get_homepage))
         // Post-related routes
@@ -72,7 +88,7 @@ async fn axum(
         .route("/api/v1/projects/:name", get(get_projects));
 
     #[cfg(not(debug_assertions))]
-    let app = ui::inject_ui(app);
+    let app = assets::inject_ui(app);
 
     Ok(app.layer(CorsLayer::permissive()).with_state(state).into())
 }
@@ -104,57 +120,10 @@ impl FromRequestParts<AppState> for AccessGaurd {
 
 fn check_auth_header(header: &str) -> bool {
     // The hashed API key
-    const KEY: [u8; 32] = hex_literal::hex!("445929267209c034d1e324834c17e0c8305df3dcb21d1710a639ac6ca08c648b");
+    const KEY: [u8; 32] =
+        hex_literal::hex!("445929267209c034d1e324834c17e0c8305df3dcb21d1710a639ac6ca08c648b");
     // Hash the header
     let mut hasher = sha2::Sha256::new();
     hasher.update(header);
     KEY[..] == hasher.finalize()[..]
-}
-
-#[cfg(not(debug_assertions))]
-pub mod ui {
-    use crate::state::AppState;
-    use axum::{
-        body::{Body, Bytes},
-        response::{Html, Response},
-        routing::get,
-        Router,
-    };
-    use http::{header, HeaderMap, HeaderValue, StatusCode};
-
-    const INDEX_HTML: &str = include_str!("../../assets/index.html");
-    const APP_WASM: &[u8] = include_bytes!("../../assets/avid-rustacean-frontend_bg.wasm.gz");
-    const APP_JS: &str = include_str!("../../assets/avid-rustacean-frontend.js");
-
-    pub fn inject_ui(router: Router<AppState, Body>) -> Router<AppState, Body> {
-        router
-            .route("/", get(landing))
-            .route("/avid-rustacean-frontend_bg.wasm", get(get_wasm))
-            .route("/avid-rustacean-frontend.js", get(get_js))
-            .fallback(landing)
-    }
-
-    async fn landing() -> Html<&'static str> {
-        Html(INDEX_HTML)
-    }
-
-    async fn get_wasm() -> Response<Body> {
-        let bytes = Bytes::copy_from_slice(APP_WASM);
-        let body: Body = bytes.into();
-
-        Response::builder()
-            .header(header::CONTENT_ENCODING, "gzip") // Unzips the compressed file
-            .header(header::CONTENT_TYPE, "application/wasm")
-            .body(body)
-            .unwrap()
-    }
-
-    async fn get_js() -> (StatusCode, HeaderMap, &'static str) {
-        let mut headers = HeaderMap::with_capacity(1);
-        headers.insert(
-            header::CONTENT_TYPE,
-            HeaderValue::from_static("application/javascript;charset=utf-8"),
-        );
-        (StatusCode::OK, headers, APP_JS)
-    }
 }
