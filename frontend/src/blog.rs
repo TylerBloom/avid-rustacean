@@ -83,6 +83,7 @@ impl Blog {
                     .collect();
             }
             BlogMessage::Clicked(name) => {
+                let name = name.replace(' ', "-");
                 ctx.link().send_message(AppBodyProps::Post(name.clone()));
                 ctx.link().navigator().unwrap().push(&Route::Post { name });
             }

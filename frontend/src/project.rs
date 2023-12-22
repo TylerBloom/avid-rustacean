@@ -128,6 +128,7 @@ impl AllProjects {
                     .collect();
             }
             AllProjectsMessage::Clicked(name) => {
+                let name = name.replace(' ', "-");
                 ctx.link().send_message(AppBodyProps::Project(name.clone()));
                 ctx.link()
                     .navigator()
