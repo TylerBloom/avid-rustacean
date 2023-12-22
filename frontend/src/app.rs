@@ -5,7 +5,6 @@ use yew_router::scope_ext::RouterScopeExt;
 
 use crate::{
     blog::{Blog, BlogMessage},
-    console_log,
     home::{Home, HomeMessage},
     palette::{GruvboxColor, GruvboxExt},
     posts::{Post, PostMessage},
@@ -269,7 +268,6 @@ impl Component for TermApp {
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
-        console_log(format!("Got message: {msg:?}"));
         match msg {
             TermAppMsg::Resized => TERMINAL.term().backend_mut().resize_buffer(),
             TermAppMsg::ComponentMsg(msg) => self.body.update(ctx, msg),
