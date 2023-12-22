@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
 use avid_rustacean_model::PostSummary;
+use gloo_net::http::Request;
 use ratatui::{prelude::*, widgets::*};
 use yew::Context;
 use yew_router::prelude::*;
@@ -10,7 +11,7 @@ use crate::{
     palette::{GruvboxColor, GruvboxExt},
     terminal::{DehydratedSpan, NeedsHydration},
     utils::{padded_title, render_markdown, MdLine, ScrollRef},
-    Route, HOST_ADDRESS,
+    Route,
 };
 
 #[derive(Debug, PartialEq)]
@@ -30,7 +31,7 @@ pub enum BlogMessage {
 impl Blog {
     pub fn create(ctx: &Context<TermApp>) -> Self {
         ctx.link().send_future(async move {
-            let summaries = match reqwest::get(format!("http{HOST_ADDRESS}/api/v1/posts")).await {
+            let summaries = match Request::get("/api/v1/posts").send().await {
                 Ok(resp) => resp.json().await.unwrap_or_default(),
                 Err(_) => Vec::new(),
             };

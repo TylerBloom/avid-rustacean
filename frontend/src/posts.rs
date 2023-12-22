@@ -1,3 +1,4 @@
+use gloo_net::http::Request;
 use ratatui::prelude::*;
 use serde::Deserialize;
 use yew::prelude::*;
@@ -6,7 +7,6 @@ use crate::{
     app::TermApp,
     terminal::DehydratedSpan,
     utils::{Markdown, ScrollRef},
-    HOST_ADDRESS,
 };
 
 #[derive(Debug, PartialEq)]
@@ -32,11 +32,13 @@ impl Post {
         url_escape::decode_to_string(name, &mut real_name);
         let cp_name = real_name.replace(' ', "-");
         ctx.link().send_future(async move {
-            let post =
-                match reqwest::get(format!("http{HOST_ADDRESS}/api/v1/posts/{cp_name}")).await {
-                    Ok(resp) => resp.json().await.unwrap_or_default(),
-                    Err(_) => avid_rustacean_model::Post::default(),
-                };
+            let post = match Request::get(&format!("/api/v1/posts/{cp_name}"))
+                .send()
+                .await
+            {
+                Ok(resp) => resp.json().await.unwrap_or_default(),
+                Err(_) => avid_rustacean_model::Post::default(),
+            };
             PostMessage::Post(post)
         });
         Self {

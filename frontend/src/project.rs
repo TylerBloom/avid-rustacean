@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
 use avid_rustacean_model::{Project, ProjectSummary};
+use gloo_net::http::Request;
 use ratatui::{prelude::*, widgets::*};
 use yew::Context;
 use yew_router::prelude::*;
@@ -10,7 +11,7 @@ use crate::{
     palette::{GruvboxColor, GruvboxExt},
     terminal::{DehydratedSpan, NeedsHydration},
     utils::{padded_title, render_markdown, Markdown, MdLine, ScrollRef},
-    Route, HOST_ADDRESS,
+    Route,
 };
 
 #[derive(Debug, PartialEq)]
@@ -42,7 +43,8 @@ impl ProjectView {
     pub fn create(title: String, ctx: &Context<TermApp>) -> Self {
         let cp_title = title.clone();
         ctx.link().send_future(async move {
-            let body = match reqwest::get(format!("http{HOST_ADDRESS}/api/v1/projects/{cp_title}"))
+            let body = match Request::get(&format!("/api/v1/projects/{cp_title}"))
+                .send()
                 .await
             {
                 Ok(resp) => resp.json().await.unwrap_or_default(),
@@ -83,7 +85,7 @@ impl ProjectView {
 impl AllProjects {
     pub fn create(ctx: &Context<TermApp>) -> Self {
         ctx.link().send_future(async move {
-            let projects = match reqwest::get(format!("http{HOST_ADDRESS}/api/v1/projects")).await {
+            let projects = match Request::get("/api/v1/projects").send().await {
                 Ok(resp) => resp.json().await.unwrap_or_default(),
                 Err(_) => Vec::new(),
             };

@@ -44,6 +44,7 @@ struct Badge {
     schema_version: usize,
     label: &'static str,
     message: &'static str,
+    color: &'static str,
 }
 
 async fn badge_api() -> Json<Badge> {
@@ -51,6 +52,7 @@ async fn badge_api() -> Json<Badge> {
         schema_version: 1,
         label: "Deployment",
         message: "Active",
+        color: "8ec07c",
     })
 }
 

@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use avid_rustacean_model::{GruvboxColor, HomePage};
+use gloo_net::http::Request;
 use ratatui::{
     prelude::*,
     widgets::{Block, Borders, Padding, Paragraph, Wrap},
@@ -12,7 +13,6 @@ use crate::{
     palette::GruvboxExt,
     terminal::DehydratedSpan,
     utils::{padded_title, render_markdown, MdLine, ScrollRef},
-    HOST_ADDRESS,
 };
 
 #[derive(Debug, PartialEq)]
@@ -30,7 +30,7 @@ pub enum HomeMessage {
 impl Home {
     pub fn create(ctx: &Context<TermApp>) -> Self {
         ctx.link().send_future(async move {
-            let home = match reqwest::get(format!("http{HOST_ADDRESS}/api/v1/home")).await {
+            let home = match Request::get("/api/v1/home").send().await {
                 Ok(resp) => resp.json().await.unwrap_or_default(),
                 Err(_) => HomePage::default(),
             };
