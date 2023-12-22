@@ -16,7 +16,7 @@ mongodb = { version = "2.3", features = ["tokio-runtime"] }
 futures = "0.3"
 troupe = "0.1.0"
 tower-http = { version = "0.4.4", features = ["cors"] }
-http = { version = "0.2" }
+http = { version = "1.0" }
 tracing = "0.1.40"
 shuttle-secrets = "0.35.1"
 sha2 = "0.10.8"
