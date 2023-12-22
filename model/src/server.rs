@@ -111,7 +111,14 @@ fn parse_code(code: &str) -> Result<ParsedCode, MdError> {
 fn convert_style(style: Style) -> Result<(GruvboxColor, GruvboxColor), MdError> {
     let fg = if let Ok(fg) = style.foreground.try_into() {
         fg
-    } else if style.foreground == (Color { r: 146, g: 131, b: 116, a: 255 }) {
+    } else if style.foreground
+        == (Color {
+            r: 146,
+            g: 131,
+            b: 116,
+            a: 255,
+        })
+    {
         GruvboxColor::orange()
     } else {
         return Err(MdError);

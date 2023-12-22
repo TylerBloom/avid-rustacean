@@ -123,7 +123,7 @@ impl AppBodyInner {
 
     fn handle_scroll(&mut self, dir: bool) {
         match self {
-            Self::Home(home) => {home.handle_scroll(dir)}
+            Self::Home(home) => home.handle_scroll(dir),
             Self::AllProjects(projects) => projects.handle_scroll(dir),
             Self::Blog(blog) => blog.handle_scroll(dir),
             Self::Project(proj) => proj.handle_scroll(dir),

@@ -5,7 +5,7 @@ use std::{
 
 use avid_rustacean_model::*;
 use futures::StreamExt;
-use mongodb::{Collection, Database, bson::Document};
+use mongodb::{bson::Document, Collection, Database};
 use tracing::{error, warn};
 
 #[derive(Debug, Clone)]
