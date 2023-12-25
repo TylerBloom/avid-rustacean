@@ -305,5 +305,5 @@ fn render_code(code: ParsedCode) -> Vec<MdLine> {
 }
 
 pub fn is_mobile() -> bool {
-    get_raw_screen_size().0 < 400
+    get_raw_screen_size().0 < 550
 }
