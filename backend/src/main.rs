@@ -56,6 +56,10 @@ async fn badge_api() -> Json<Badge> {
     })
 }
 
+async fn print(body: String) {
+    println!("Print API called:\n{body}");
+}
+
 #[shuttle_runtime::main]
 async fn axum(
     #[shuttle_shared_db::MongoDb] db_conn: Database,
@@ -76,8 +80,6 @@ async fn axum(
 
     let app = Router::new()
         // Homepage-related routes
-        .route("/api/v1/badge", get(badge_api))
-        // Homepage-related routes
         .route("/api/v1/home", post(update_homepage))
         .route("/api/v1/home", get(get_homepage))
         // Post-related routes
@@ -88,7 +90,10 @@ async fn axum(
         // Project-related routes
         .route("/api/v1/projects", post(create_project))
         .route("/api/v1/projects", get(get_all_projects))
-        .route("/api/v1/projects/:name", get(get_projects));
+        .route("/api/v1/projects/:name", get(get_projects))
+        // Misc
+        .route("/api/v1/print", post(print))
+        .route("/api/v1/badge", get(badge_api));
 
     #[cfg(not(debug_assertions))]
     let app = assets::inject_ui(app);

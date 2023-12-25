@@ -8,7 +8,7 @@ use wasm_bindgen::JsValue;
 use web_sys::MouseEvent;
 use yew::{html, Callback, Html};
 
-use crate::palette::*;
+use crate::{palette::*, utils::is_mobile};
 
 /// The backend used to take ratatui widgets and render them into HTML. This is achieved through a
 /// three-step rendering process.
@@ -118,7 +118,11 @@ impl WebTerm {
     }
 
     fn get_sized_buffer() -> Vec<Vec<Cell>> {
-        let (width, height) = get_window_size();
+        let (width, height) = if is_mobile() {
+            get_screen_size()
+        } else {
+            get_window_size()
+        };
         vec![vec![Cell::default(); width as usize]; height as usize]
     }
 
@@ -140,9 +144,6 @@ impl WebTerm {
             let mut text = String::with_capacity(line.len());
             let mut line_buf: Vec<TermSpan> = Vec::new();
             for c in line {
-                if c.skip {
-                    continue;
-                }
                 if fg != c.fg || bg != c.bg || mods != c.modifier {
                     // Create a new node, clear the text buffer, update the foreground/background
                     if !text.is_empty() {
@@ -211,7 +212,11 @@ impl WebTerm {
     }
 
     pub fn resize_buffer(&mut self) {
-        let (width, height) = get_window_size();
+        let (width, height) = if is_mobile() {
+            get_screen_size()
+        } else {
+            get_window_size()
+        };
         if self.buffer.len() != height as usize || self.buffer[0].len() != width as usize {
             // Reset the buffer only if the size is actually different
             self.buffer = Self::get_sized_buffer();
@@ -256,8 +261,12 @@ impl Backend for WebTerm {
     }
 
     fn size(&self) -> Result<Rect> {
-        let (width, height) = get_window_size();
-        Ok(Rect::new(0, 0, width, height))
+        Ok(Rect::new(
+            0,
+            0,
+            self.buffer.first().unwrap().len().saturating_sub(1) as u16,
+            self.buffer.len().saturating_sub(1) as u16,
+        ))
     }
 
     fn window_size(&mut self) -> Result<ratatui::backend::WindowSize> {
@@ -330,7 +339,7 @@ pub fn get_max_window_size() -> (u16, u16) {
 }
 */
 
-fn get_raw_window_size() -> (u16, u16) {
+pub fn get_raw_window_size() -> (u16, u16) {
     fn js_val_to_int<I: TryFrom<usize>>(val: JsValue) -> Option<I> {
         val.as_f64().and_then(|i| I::try_from(i as usize).ok())
     }
@@ -343,6 +352,18 @@ fn get_raw_window_size() -> (u16, u16) {
                 .zip(s.inner_height().ok().and_then(js_val_to_int::<u16>))
         })
         .unwrap_or((120, 120))
+}
+
+pub fn get_raw_screen_size() -> (i32, i32) {
+    let s = web_sys::window().unwrap().screen().unwrap();
+    (s.width().unwrap(), s.height().unwrap())
+}
+
+/// Calculates the number of characters that can fit in the window.
+pub fn get_screen_size() -> (u16, u16) {
+    let (w, h) = get_raw_screen_size();
+    // These are mildly magical numbers... make them more precise
+    (w as u16 / 10, h as u16 / 19)
 }
 
 /// A lazy abstraction to allow for method chain on Style to mark a cell as hydratable

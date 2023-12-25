@@ -10,7 +10,7 @@ use yew::Context;
 use crate::{
     app::TermApp,
     palette::GruvboxExt,
-    terminal::{DehydratedSpan, NeedsHydration},
+    terminal::{get_raw_screen_size, DehydratedSpan, NeedsHydration},
 };
 
 /// A container for managing the logic for a well-formated scroll bar.
@@ -176,15 +176,27 @@ impl Markdown {
     }
 
     pub fn draw(&self, scroll: &ScrollRef, rect: Rect, frame: &mut Frame<'_>) {
-        let chunks = Layout::new(
-            Direction::Horizontal,
-            [
-                Constraint::Percentage(25),
-                Constraint::Percentage(50),
-                Constraint::Percentage(25),
-            ],
-        )
-        .split(rect);
+        let chunks = if is_mobile() {
+            Layout::new(
+                Direction::Horizontal,
+                [
+                    Constraint::Percentage(0),
+                    Constraint::Percentage(100),
+                    Constraint::Percentage(0),
+                ],
+            )
+            .split(rect)
+        } else {
+            Layout::new(
+                Direction::Horizontal,
+                [
+                    Constraint::Percentage(25),
+                    Constraint::Percentage(50),
+                    Constraint::Percentage(25),
+                ],
+            )
+            .split(rect)
+        };
         let para = self.get_para(chunks[1].width.saturating_sub(2) as usize);
         scroll.set_content_length(para.line_count(chunks[1].width.saturating_sub(2)));
         let view_start = scroll.view_start();
@@ -290,4 +302,8 @@ fn render_code(code: ParsedCode) -> Vec<MdLine> {
         digest.push(MdLine::Code(Line::from(std::mem::take(&mut spans))));
     }
     digest
+}
+
+pub fn is_mobile() -> bool {
+    get_raw_screen_size().0 < 400
 }

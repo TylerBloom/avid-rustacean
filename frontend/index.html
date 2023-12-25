@@ -2,6 +2,7 @@
 <html lang="en">
 				<head> </head>
 				<meta charset="UTF-8">
+				<meta name="viewport" content="width=device-width, initial-scale=1" />
 				<link href='https://fonts.googleapis.com/css?family=Noto Sans Mono' rel='stylesheet'>
 				<style>
 								body {
@@ -15,9 +16,16 @@
                                     block-size: fit-content;
                                     margin: auto;
                                 }
-								pre {
-												margin: 0;
-								}
+                                @media (min-width: 700px) {
+                                    pre {
+                                        margin: 0px 0px 0px 0px;
+                                    }
+                                }
+                                @media (max-width: 700px) {
+                                    pre {
+                                        margin: 0px 0px -2px 0px;
+                                    }
+                                }
 				</style>
 				<body> </body>
 				<script> </script>

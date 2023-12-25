@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 
-use yew::{Component, Context, Properties};
+use yew::{platform::spawn_local, Component, Context, Properties};
 use yew_router::scope_ext::RouterScopeExt;
 
 use crate::{
@@ -9,7 +9,7 @@ use crate::{
     palette::{GruvboxColor, GruvboxExt},
     posts::{Post, PostMessage},
     project::{AllProjects, AllProjectsMessage, ProjectMessage, ProjectView},
-    terminal::{DehydratedSpan, NeedsHydration},
+    terminal::{get_raw_window_size, DehydratedSpan, NeedsHydration},
     utils::{padded_title, ScrollRef},
     Route, TERMINAL,
 };
@@ -222,6 +222,8 @@ impl TermApp {
         let line = Line::from(vec![
             Span::styled("Email", GruvboxColor::blue().fg_style().to_hydrate()),
             Span::from(" | "),
+            Span::styled("Repo", GruvboxColor::blue().fg_style().to_hydrate()),
+            Span::from(" | "),
             Span::styled("GitHub", GruvboxColor::blue().fg_style().to_hydrate()),
             Span::from(" | "),
             Span::styled("LinkdIn", GruvboxColor::blue().fg_style().to_hydrate()),
@@ -269,7 +271,17 @@ impl Component for TermApp {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            TermAppMsg::Resized => TERMINAL.term().backend_mut().resize_buffer(),
+            TermAppMsg::Resized => {
+                spawn_local(async move {
+                    gloo_net::http::Request::post("/api/v1/print")
+                        .body(format!("Got resize message: {:?}", get_raw_window_size()))
+                        .unwrap()
+                        .send()
+                        .await
+                        .unwrap();
+                });
+                TERMINAL.term().backend_mut().resize_buffer()
+            }
             TermAppMsg::ComponentMsg(msg) => self.body.update(ctx, msg),
             TermAppMsg::Scrolled(b) => self.body.handle_scroll(b),
             TermAppMsg::Clicked(page) => {
@@ -304,9 +316,10 @@ impl Component for TermApp {
             "Home" => span.on_click(ctx.link().callback(|_| AppBodyProps::Home)),
             "Projects" => span.on_click(ctx.link().callback(|_| AppBodyProps::AllProjects)),
             "Blog" => span.on_click(ctx.link().callback(|_| AppBodyProps::Blog)),
+            "Repo" => span.hyperlink("https://github.com/TylerBloom/avid-rustacean".to_owned()),
             "Email" => span.hyperlink("mailto:tylerbloom2222@gmail.com".to_owned()),
             "GitHub" => span.hyperlink("https://github.com/TylerBloom".to_owned()),
-            "LinkdIn" => {
+            "LinkedIn" => {
                 span.hyperlink("https://www.linkedin.com/in/tyler-bloom-aba0a4156/".to_owned())
             }
             _ => self.body.hydrate(ctx, span),
