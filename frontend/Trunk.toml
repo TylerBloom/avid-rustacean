@@ -1,0 +1,7 @@
+[serve]
+address = "0.0.0.0"
+
+[[proxy]]
+backend = "http://localhost:8000/api"
+rewrite = "/api/"
+insecure = true
