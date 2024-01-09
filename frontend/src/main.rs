@@ -27,6 +27,7 @@ use yew::{function_component, html, Html};
 use yew_router::prelude::*;
 
 pub mod app;
+pub mod touch_scroll;
 pub mod blog;
 pub mod home;
 pub mod palette;

@@ -4,7 +4,7 @@ use serde::Deserialize;
 use yew::prelude::*;
 
 use crate::{
-    app::TermApp,
+    app::{ScrollMotion, TermApp},
     terminal::DehydratedSpan,
     utils::{Markdown, ScrollRef},
 };
@@ -56,11 +56,10 @@ impl Post {
         self.body.hydrate(ctx, span)
     }
 
-    pub fn handle_scroll(&mut self, dir: bool) {
-        if dir {
-            self.scroll = self.scroll.saturating_add(1);
-        } else {
-            self.scroll = self.scroll.saturating_sub(1);
+    pub fn handle_scroll(&mut self, dir: ScrollMotion) {
+        match dir {
+            ScrollMotion::Up => self.scroll = self.scroll.saturating_add(1),
+            ScrollMotion::Down => self.scroll = self.scroll.saturating_sub(1),
         }
     }
 

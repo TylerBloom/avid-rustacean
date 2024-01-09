@@ -1,6 +1,6 @@
-use std::cmp::Ordering;
+use std::{cell::RefCell, cmp::Ordering, rc::Rc};
 
-use yew::{platform::spawn_local, Component, Context, Properties};
+use yew::{Component, Context, Properties};
 use yew_router::scope_ext::RouterScopeExt;
 
 use crate::{
@@ -9,7 +9,8 @@ use crate::{
     palette::{GruvboxColor, GruvboxExt},
     posts::{Post, PostMessage},
     project::{AllProjects, AllProjectsMessage, ProjectMessage, ProjectView},
-    terminal::{get_raw_window_size, DehydratedSpan, NeedsHydration},
+    terminal::{DehydratedSpan, NeedsHydration},
+    touch_scroll::TouchScroll,
     utils::{padded_title, ScrollRef},
     Route, TERMINAL,
 };
@@ -80,12 +81,11 @@ impl AppBody {
         self.inner.update(ctx, msg)
     }
 
-    fn handle_scroll(&mut self, dir: bool) {
+    fn handle_scroll(&mut self, dir: ScrollMotion) {
         self.inner.handle_scroll(dir);
-        if dir {
-            self.scroll.next()
-        } else {
-            self.scroll.prev()
+        match dir {
+            ScrollMotion::Up => self.scroll.next(),
+            ScrollMotion::Down => self.scroll.prev(),
         }
     }
 }
@@ -122,7 +122,7 @@ impl AppBodyInner {
         }
     }
 
-    fn handle_scroll(&mut self, dir: bool) {
+    fn handle_scroll(&mut self, dir: ScrollMotion) {
         match self {
             Self::Home(home) => home.handle_scroll(dir),
             Self::AllProjects(projects) => projects.handle_scroll(dir),
@@ -160,10 +160,14 @@ impl AppBodyProps {
 pub enum TermAppMsg {
     Resized,
     Clicked(AppBodyProps),
-    // TODO: Replace bool with "up" or "down"
-    // true = up, down = false
-    Scrolled(bool),
+    Scrolled(ScrollMotion),
     ComponentMsg(ComponentMsg),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ScrollMotion {
+    Up,
+    Down,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -256,8 +260,8 @@ impl Component for TermApp {
         let func = move |event: JsValue| {
             let event: WheelEvent = event.into();
             match event.delta_y().partial_cmp(&0.0) {
-                Some(Ordering::Less) => cb.emit(TermAppMsg::Scrolled(false)),
-                Some(Ordering::Greater) => cb.emit(TermAppMsg::Scrolled(true)),
+                Some(Ordering::Less) => cb.emit(TermAppMsg::Scrolled(ScrollMotion::Down)),
+                Some(Ordering::Greater) => cb.emit(TermAppMsg::Scrolled(ScrollMotion::Up)),
                 _ => {}
             }
         };
@@ -265,41 +269,44 @@ impl Component for TermApp {
             .into_js_value()
             .into();
         window.set_onwheel(Some(&func));
-        // Bind a function to the "touch-move" window event
-        // TODO: This will require quite the workaround...
-        //  - Make an accumulator struct that holds the initial touch position, the latest position, and total (vertical) delta
-        //  - Put this behind an Arc<Mutex>
-        //  - Make touch start and move closures that get a handle
-        //  - Have touch start reset the acc
-        //  - Have touch move emit messages after some threshold
-        // This approach is naive, but we're going for functional first
-        let _cb = ctx.link().callback(|msg: TermAppMsg| msg);
+
+        // In order to emulate scrolling on mobile, a simple (perhaps too simple) approach is
+        // taken. Touch events are started in an accumulator behind a `RefCell`. This accumulator
+        // tracks when two touches should be connected and tracks the overall progress. When enough
+        // progress has been made, a scroll message is emitted. This approach is a bit naive, but
+        // we're going for functional first
+
+        // Bind a function to the "touch-start" window event
+        let acc = Rc::new(RefCell::new(TouchScroll::new()));
+        let acc_start = Rc::clone(&acc);
         let func = move |event: JsValue| {
             let event: TouchEvent = event.into();
-            spawn_local(async move {
-                let mut counter = 0;
-                let list = event.touches();
-                let mut digest = format!("Got touch event with {} touch(es)... ", list.length());
-                while let Some(touch) = list.get(counter) {
-                    counter += 1;
-                    digest.push_str(&format!("{touch:?} -> {:?} ", touch.target()));
-                }
-                gloo_net::http::Request::post("/api/v1/print")
-                    .body(digest)
-                    .unwrap()
-                    .send()
-                    .await
-                    .unwrap();
-                // Naive approach: Always up or down
-                let Some(_) = event.target_touches().get(0) else {
-                    return;
-                };
-            })
+            if let Some(touch) = event.touches().get(0) {
+                acc_start.borrow_mut().init_touch(&touch);
+            }
+        };
+        let func: Function = Closure::<dyn 'static + Fn(JsValue)>::new(func)
+            .into_js_value()
+            .into();
+        window.set_ontouchstart(Some(&func));
+
+        // Bind a function to the "touch-move" window event
+        let acc_move = Rc::clone(&acc);
+        let cb = ctx.link().callback(|msg: TermAppMsg| msg);
+        let func = move |event: JsValue| {
+            let event: TouchEvent = event.into();
+            if let Some(touch) = event.touches().get(0) {
+                acc_move
+                    .borrow_mut()
+                    .add_touch(&touch)
+                    .for_each(|scroll| cb.emit(scroll.into()));
+            }
         };
         let func: Function = Closure::<dyn 'static + Fn(JsValue)>::new(func)
             .into_js_value()
             .into();
         window.set_ontouchmove(Some(&func));
+
         // Create the viewer
         let body = ctx.props().body.clone().create_body(ctx);
         Self { body }
@@ -307,17 +314,7 @@ impl Component for TermApp {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            TermAppMsg::Resized => {
-                spawn_local(async move {
-                    gloo_net::http::Request::post("/api/v1/print")
-                        .body(format!("Got resize message: {:?}", get_raw_window_size()))
-                        .unwrap()
-                        .send()
-                        .await
-                        .unwrap();
-                });
-                TERMINAL.term().backend_mut().resize_buffer()
-            }
+            TermAppMsg::Resized => TERMINAL.term().backend_mut().resize_buffer(),
             TermAppMsg::ComponentMsg(msg) => self.body.update(ctx, msg),
             TermAppMsg::Scrolled(b) => self.body.handle_scroll(b),
             TermAppMsg::Clicked(page) => {

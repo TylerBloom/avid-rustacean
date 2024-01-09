@@ -7,7 +7,7 @@ use yew::Context;
 use yew_router::prelude::*;
 
 use crate::{
-    app::{AppBodyProps, TermApp},
+    app::{AppBodyProps, TermApp, ScrollMotion},
     palette::{GruvboxColor, GruvboxExt},
     terminal::{DehydratedSpan, NeedsHydration},
     utils::{padded_title, render_markdown, MdLine, ScrollRef},
@@ -57,11 +57,10 @@ impl Blog {
         }
     }
 
-    pub fn handle_scroll(&mut self, dir: bool) {
-        if dir {
-            self.scroll = self.scroll.saturating_add(1);
-        } else {
-            self.scroll = self.scroll.saturating_sub(1);
+    pub fn handle_scroll(&mut self, dir: ScrollMotion) {
+        match dir {
+            ScrollMotion::Up => self.scroll = self.scroll.saturating_add(1),
+            ScrollMotion::Down => self.scroll = self.scroll.saturating_sub(1),
         }
     }
 

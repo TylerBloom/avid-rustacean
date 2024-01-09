@@ -7,7 +7,7 @@ use yew::Context;
 use yew_router::prelude::*;
 
 use crate::{
-    app::{AppBodyProps, TermApp},
+    app::{AppBodyProps, TermApp, ScrollMotion},
     palette::{GruvboxColor, GruvboxExt},
     terminal::{DehydratedSpan, NeedsHydration},
     utils::{padded_title, render_markdown, Markdown, MdLine, ScrollRef},
@@ -67,7 +67,7 @@ impl ProjectView {
         self.body.hydrate(ctx, span)
     }
 
-    pub fn handle_scroll(&mut self, _dir: bool) {}
+    pub fn handle_scroll(&mut self, _dir: ScrollMotion) {}
 
     pub fn update(&mut self, _ctx: &Context<TermApp>, msg: ProjectMessage) {
         match msg {
@@ -110,7 +110,7 @@ impl AllProjects {
         }
     }
 
-    pub fn handle_scroll(&mut self, _dir: bool) {}
+    pub fn handle_scroll(&mut self, _dir: ScrollMotion) {}
 
     pub fn update(&mut self, ctx: &Context<TermApp>, msg: AllProjectsMessage) {
         match msg {
