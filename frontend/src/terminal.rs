@@ -328,7 +328,7 @@ fn to_css_color(c: Color) -> Option<Cow<'static, str>> {
 pub fn get_window_size() -> (u16, u16) {
     let (w, h) = get_raw_window_size();
     // These are mildly magical numbers... make them more precise
-    (w / 10, h / 19)
+    (w / 10, h / 20)
 }
 
 /*
