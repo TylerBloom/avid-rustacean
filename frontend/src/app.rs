@@ -17,6 +17,7 @@ use derive_more::From;
 use js_sys::Function;
 use ratatui::{prelude::*, widgets::*};
 use wasm_bindgen::{prelude::Closure, JsValue};
+use web_sys::TouchEvent;
 use yew::prelude::*;
 
 /// This module contains all of the machinery to run the UI app. The UI app is a single page
@@ -264,6 +265,41 @@ impl Component for TermApp {
             .into_js_value()
             .into();
         window.set_onwheel(Some(&func));
+        // Bind a function to the "touch-move" window event
+        // TODO: This will require quite the workaround...
+        //  - Make an accumulator struct that holds the initial touch position, the latest position, and total (vertical) delta
+        //  - Put this behind an Arc<Mutex>
+        //  - Make touch start and move closures that get a handle
+        //  - Have touch start reset the acc
+        //  - Have touch move emit messages after some threshold
+        // This approach is naive, but we're going for functional first
+        let _cb = ctx.link().callback(|msg: TermAppMsg| msg);
+        let func = move |event: JsValue| {
+            let event: TouchEvent = event.into();
+            spawn_local(async move {
+                let mut counter = 0;
+                let list = event.touches();
+                let mut digest = format!("Got touch event with {} touch(es)... ", list.length());
+                while let Some(touch) = list.get(counter) {
+                    counter += 1;
+                    digest.push_str(&format!("{touch:?} -> {:?} ", touch.target()));
+                }
+                gloo_net::http::Request::post("/api/v1/print")
+                    .body(digest)
+                    .unwrap()
+                    .send()
+                    .await
+                    .unwrap();
+                // Naive approach: Always up or down
+                let Some(_) = event.target_touches().get(0) else {
+                    return;
+                };
+            })
+        };
+        let func: Function = Closure::<dyn 'static + Fn(JsValue)>::new(func)
+            .into_js_value()
+            .into();
+        window.set_ontouchmove(Some(&func));
         // Create the viewer
         let body = ctx.props().body.clone().create_body(ctx);
         Self { body }
