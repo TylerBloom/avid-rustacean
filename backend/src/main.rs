@@ -56,7 +56,9 @@ async fn badge_api() -> Json<Badge> {
     })
 }
 
+#[allow(unused_variables)]
 async fn print(body: String) {
+    #[cfg(debug_assertions)]
     println!("Print API called:\n{body}");
 }
 

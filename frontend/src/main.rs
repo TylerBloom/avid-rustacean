@@ -27,13 +27,13 @@ use yew::{function_component, html, Html};
 use yew_router::prelude::*;
 
 pub mod app;
-pub mod touch_scroll;
 pub mod blog;
 pub mod home;
 pub mod palette;
 pub mod posts;
 pub mod project;
 pub mod terminal;
+pub mod touch_scroll;
 pub mod utils;
 
 pub static TERMINAL: Renderer = Renderer::new();

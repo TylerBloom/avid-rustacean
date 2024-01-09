@@ -7,7 +7,7 @@ use yew::Context;
 use yew_router::prelude::*;
 
 use crate::{
-    app::{AppBodyProps, TermApp, ScrollMotion},
+    app::{AppBodyProps, ScrollMotion, TermApp},
     palette::{GruvboxColor, GruvboxExt},
     terminal::{DehydratedSpan, NeedsHydration},
     utils::{padded_title, render_markdown, Markdown, MdLine, ScrollRef},
