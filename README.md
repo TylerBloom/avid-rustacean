@@ -57,4 +57,5 @@ On the client device, go to that address and you'll see your app.
 ## Future Plans
 Currently, this project stands is an MVP.
 It works and is relatively easy to use (on desktop), but there is a lot of room for improvement.
-I plan to extract out the Ratatui + Yew integration into its own crate eventually.
+
+The rendering setup is actively being extracted into another crate, [webatui](https://github.com/TylerBloom/webatui).
