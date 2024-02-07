@@ -3,18 +3,19 @@ use std::collections::{HashMap, HashSet};
 use avid_rustacean_model::PostSummary;
 use gloo_net::http::Request;
 use ratatui::{prelude::*, widgets::*};
+use webatui::{backend::DehydratedSpan, WebTermMessage, WebTerminal};
 use yew::Context;
 use yew_router::prelude::*;
 
 use crate::{
     app::{AppBodyProps, ScrollMotion, TermApp},
     palette::{GruvboxColor, GruvboxExt},
-    terminal::{DehydratedSpan, NeedsHydration},
+    terminal::NeedsHydration,
     utils::{padded_title, render_markdown, MdLine, ScrollRef},
     Route,
 };
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Blog {
     summaries: Vec<(PostSummary, Vec<Line<'static>>)>,
     titles: HashSet<String>,
@@ -29,14 +30,17 @@ pub enum BlogMessage {
 }
 
 impl Blog {
-    pub fn create(ctx: &Context<TermApp>) -> Self {
+    pub fn setup(&self, ctx: &Context<WebTerminal<TermApp>>) {
         ctx.link().send_future(async move {
             let summaries = match Request::get("/api/v1/posts").send().await {
                 Ok(resp) => resp.json().await.unwrap_or_default(),
                 Err(_) => Vec::new(),
             };
-            BlogMessage::PostSummaries(summaries)
+            WebTermMessage::new(BlogMessage::PostSummaries(summaries))
         });
+    }
+
+    pub fn create() -> Self {
         Self {
             scroll: 0,
             summaries: Vec::new(),
@@ -45,14 +49,14 @@ impl Blog {
         }
     }
 
-    pub fn hydrate(&self, ctx: &Context<TermApp>, span: &mut DehydratedSpan) {
+    pub fn hydrate(&self, ctx: &Context<WebTerminal<TermApp>>, span: &mut DehydratedSpan) {
         if let Some(link) = self.links.get(span.text()) {
             span.hyperlink(link.clone())
         } else if self.titles.contains(span.text()) {
             let title = span.text().to_owned();
             span.on_click(
                 ctx.link()
-                    .callback(move |_| BlogMessage::Clicked(title.clone())),
+                    .callback(move |_| WebTermMessage::new(BlogMessage::Clicked(title.clone()))),
             );
         }
     }
@@ -64,7 +68,7 @@ impl Blog {
         }
     }
 
-    pub fn update(&mut self, ctx: &Context<TermApp>, msg: BlogMessage) {
+    pub fn update(&mut self, ctx: &Context<WebTerminal<TermApp>>, msg: BlogMessage) {
         match msg {
             BlogMessage::PostSummaries(summaries) => {
                 self.summaries = summaries
@@ -84,7 +88,8 @@ impl Blog {
             }
             BlogMessage::Clicked(name) => {
                 let name = name.replace(' ', "-");
-                ctx.link().send_message(AppBodyProps::Post(name.clone()));
+                ctx.link()
+                    .send_message(WebTermMessage::new(AppBodyProps::Post(name.clone())));
                 ctx.link().navigator().unwrap().push(&Route::Post { name });
             }
         }

@@ -5,16 +5,17 @@ use ratatui::{
     prelude::*,
     widgets::{block::Title, *},
 };
+use webatui::{WebTerminal, backend::DehydratedSpan};
 use yew::Context;
 
 use crate::{
     app::TermApp,
     palette::GruvboxExt,
-    terminal::{get_raw_screen_size, DehydratedSpan, NeedsHydration},
+    terminal::{get_raw_screen_size, NeedsHydration},
 };
 
 /// A container for managing the logic for a well-formated scroll bar.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ScrollRef {
     /// The number of lines that could be displayed.
     content_length: RefCell<usize>,
@@ -151,7 +152,7 @@ impl Markdown {
         }
     }
 
-    pub fn hydrate(&self, _ctx: &Context<TermApp>, span: &mut DehydratedSpan) {
+    pub fn hydrate(&self, _ctx: &Context<WebTerminal<TermApp>>, span: &mut DehydratedSpan) {
         if let Some(link) = self.links.get(span.text()) {
             span.hyperlink(link.clone());
         }

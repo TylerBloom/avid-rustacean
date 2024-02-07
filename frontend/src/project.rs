@@ -3,18 +3,19 @@ use std::collections::{HashMap, HashSet};
 use avid_rustacean_model::{Project, ProjectSummary};
 use gloo_net::http::Request;
 use ratatui::{prelude::*, widgets::*};
+use webatui::{WebTermMessage, WebTerminal, backend::DehydratedSpan};
 use yew::Context;
 use yew_router::prelude::*;
 
 use crate::{
     app::{AppBodyProps, ScrollMotion, TermApp},
     palette::{GruvboxColor, GruvboxExt},
-    terminal::{DehydratedSpan, NeedsHydration},
+    terminal::{NeedsHydration},
     utils::{padded_title, render_markdown, Markdown, MdLine, ScrollRef},
     Route,
 };
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct AllProjects {
     projects: Vec<(ProjectSummary, Vec<Line<'static>>)>,
     names: HashSet<String>,
@@ -27,7 +28,7 @@ pub enum AllProjectsMessage {
     Clicked(String),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ProjectView {
     title: String,
     body: Markdown,
@@ -40,8 +41,8 @@ pub enum ProjectMessage {
 }
 
 impl ProjectView {
-    pub fn create(title: String, ctx: &Context<TermApp>) -> Self {
-        let cp_title = title.clone();
+    pub fn setup(&self, ctx: &Context<WebTerminal<TermApp>>) {
+        let cp_title = self.title.clone();
         ctx.link().send_future(async move {
             let body = match Request::get(&format!("/api/v1/projects/{cp_title}"))
                 .send()
@@ -50,8 +51,11 @@ impl ProjectView {
                 Ok(resp) => resp.json().await.unwrap_or_default(),
                 Err(_) => Project::default(),
             };
-            ProjectMessage::Body(body)
+            WebTermMessage::new(ProjectMessage::Body(body))
         });
+    }
+
+    pub fn create(title: String) -> Self {
         Self {
             title,
             body: Markdown::default(),
@@ -63,13 +67,13 @@ impl ProjectView {
         None
     }
 
-    pub fn hydrate(&self, ctx: &Context<TermApp>, span: &mut DehydratedSpan) {
+    pub fn hydrate(&self, ctx: &Context<WebTerminal<TermApp>>, span: &mut DehydratedSpan) {
         self.body.hydrate(ctx, span)
     }
 
     pub fn handle_scroll(&mut self, _dir: ScrollMotion) {}
 
-    pub fn update(&mut self, _ctx: &Context<TermApp>, msg: ProjectMessage) {
+    pub fn update(&mut self, _ctx: &Context<WebTerminal<TermApp>>, msg: ProjectMessage) {
         match msg {
             ProjectMessage::Body(body) => {
                 self.body = Markdown::new(body.summary.name.clone(), body.body);
@@ -83,14 +87,17 @@ impl ProjectView {
 }
 
 impl AllProjects {
-    pub fn create(ctx: &Context<TermApp>) -> Self {
+    pub fn setup(&self, ctx: &Context<WebTerminal<TermApp>>) {
         ctx.link().send_future(async move {
             let projects = match Request::get("/api/v1/projects").send().await {
                 Ok(resp) => resp.json().await.unwrap_or_default(),
                 Err(_) => Vec::new(),
             };
-            AllProjectsMessage::ProjectSummaries(projects)
+            WebTermMessage::new(AllProjectsMessage::ProjectSummaries(projects))
         });
+    }
+
+    pub fn create() -> Self {
         Self {
             projects: Vec::new(),
             names: HashSet::new(),
@@ -98,21 +105,22 @@ impl AllProjects {
         }
     }
 
-    pub fn hydrate(&self, ctx: &Context<TermApp>, span: &mut DehydratedSpan) {
+    pub fn hydrate(&self, ctx: &Context<WebTerminal<TermApp>>, span: &mut DehydratedSpan) {
         if let Some(link) = self.links.get(span.text()) {
             span.hyperlink(link.clone());
         } else if self.names.contains(span.text()) {
             let name = span.text().to_owned();
             span.on_click(
-                ctx.link()
-                    .callback(move |_| AllProjectsMessage::Clicked(name.clone())),
+                ctx.link().callback(move |_| {
+                    WebTermMessage::new(AllProjectsMessage::Clicked(name.clone()))
+                }),
             );
         }
     }
 
     pub fn handle_scroll(&mut self, _dir: ScrollMotion) {}
 
-    pub fn update(&mut self, ctx: &Context<TermApp>, msg: AllProjectsMessage) {
+    pub fn update(&mut self, ctx: &Context<WebTerminal<TermApp>>, msg: AllProjectsMessage) {
         match msg {
             AllProjectsMessage::ProjectSummaries(projects) => {
                 self.projects = projects
@@ -131,7 +139,8 @@ impl AllProjects {
             }
             AllProjectsMessage::Clicked(name) => {
                 let name = name.replace(' ', "-");
-                ctx.link().send_message(AppBodyProps::Project(name.clone()));
+                ctx.link()
+                    .send_message(WebTermMessage::new(AppBodyProps::Project(name.clone())));
                 ctx.link()
                     .navigator()
                     .unwrap()

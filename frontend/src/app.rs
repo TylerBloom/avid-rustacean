@@ -1,5 +1,6 @@
 use std::{cell::RefCell, cmp::Ordering, rc::Rc};
 
+use webatui::{TerminalApp, WebTermMessage, WebTerminal, backend::DehydratedSpan};
 use yew::{Component, Context, Properties};
 use yew_router::scope_ext::RouterScopeExt;
 
@@ -9,10 +10,10 @@ use crate::{
     palette::{GruvboxColor, GruvboxExt},
     posts::{Post, PostMessage},
     project::{AllProjects, AllProjectsMessage, ProjectMessage, ProjectView},
-    terminal::{DehydratedSpan, NeedsHydration},
+    terminal::NeedsHydration,
     touch_scroll::TouchScroll,
     utils::{padded_title, ScrollRef},
-    Route, TERMINAL,
+    Route,
 };
 use derive_more::From;
 use js_sys::Function;
@@ -26,9 +27,78 @@ use yew::prelude::*;
 /// between tabs/"pages". The app holds all of the logic for interacting with the browser window,
 /// including switching between tabs and tracking the cursor.
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct TermApp {
     /// The body of the UI
     body: AppBody,
+}
+
+impl TerminalApp for TermApp {
+    type Message = TermAppMsg;
+
+    fn setup(&mut self, ctx: &Context<WebTerminal<Self>>) {
+        self.body.setup(ctx);
+    }
+
+    fn update(&mut self, ctx: &Context<WebTerminal<Self>>, msg: Self::Message) -> bool {
+        match msg {
+            TermAppMsg::ComponentMsg(msg) => self.body.update(ctx, msg),
+            TermAppMsg::Scrolled(b) => self.body.handle_scroll(b),
+            TermAppMsg::Clicked(page) => {
+                match &page {
+                    AppBodyProps::Home => ctx.link().navigator().unwrap().push(&Route::Home),
+                    AppBodyProps::AllProjects => {
+                        ctx.link().navigator().unwrap().push(&Route::AllProjects)
+                    }
+                    AppBodyProps::Blog => ctx.link().navigator().unwrap().push(&Route::Blog),
+                    AppBodyProps::Project(name) => {
+                        ctx.link().navigator().unwrap().push(&Route::Project {
+                            name: name.to_owned(),
+                        });
+                    }
+                    AppBodyProps::Post(name) => {
+                        ctx.link().navigator().unwrap().push(&Route::Post {
+                            name: name.to_owned(),
+                        });
+                    }
+                }
+                self.body = page.create_body();
+            }
+        }
+        true
+    }
+
+    fn render(&self, area: Rect, frame: &mut Frame<'_>) {
+        self.draw(area, frame);
+    }
+
+    fn hydrate(
+        &self,
+        ctx: &Context<WebTerminal<Self>>,
+        span: &mut webatui::backend::DehydratedSpan,
+    ) {
+        match span.text().trim() {
+            "Home" => span.on_click(
+                ctx.link()
+                    .callback(|_| WebTermMessage::new(AppBodyProps::Home)),
+            ),
+            "Projects" => span.on_click(
+                ctx.link()
+                    .callback(|_| WebTermMessage::new(AppBodyProps::AllProjects)),
+            ),
+            "Blog" => span.on_click(
+                ctx.link()
+                    .callback(|_| WebTermMessage::new(AppBodyProps::Blog)),
+            ),
+            "Repo" => span.hyperlink("https://github.com/TylerBloom/avid-rustacean".to_owned()),
+            "Email" => span.hyperlink("mailto:tylerbloom2222@gmail.com".to_owned()),
+            "GitHub" => span.hyperlink("https://github.com/TylerBloom".to_owned()),
+            "LinkedIn" => {
+                span.hyperlink("https://www.linkedin.com/in/tyler-bloom-aba0a4156/".to_owned())
+            }
+            _ => self.body.hydrate(ctx, span),
+        }
+    }
 }
 
 /// The body used for the app on construction.
@@ -37,6 +107,7 @@ pub struct TermAppProps {
     pub body: AppBodyProps,
 }
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct AppBody {
     inner: AppBodyInner,
     // TODO: Rename to scroll
@@ -44,7 +115,7 @@ pub struct AppBody {
 }
 
 /// The different main sections the user might find themselves in.
-#[derive(Debug, PartialEq, From)]
+#[derive(Debug, PartialEq, From, Clone)]
 enum AppBodyInner {
     Home(Home),
     AllProjects(AllProjects),
@@ -61,6 +132,10 @@ impl AppBody {
         }
     }
 
+    fn setup(&mut self, ctx: &Context<WebTerminal<TermApp>>) {
+        self.inner.setup(ctx)
+    }
+
     fn draw(&self, chunk: Rect, frame: &mut Frame<'_>) {
         self.inner.draw(&self.scroll, chunk, frame);
         self.scroll.render_scroll(
@@ -73,11 +148,11 @@ impl AppBody {
         );
     }
 
-    fn hydrate(&self, ctx: &Context<TermApp>, span: &mut DehydratedSpan) {
+    fn hydrate(&self, ctx: &Context<WebTerminal<TermApp>>, span: &mut DehydratedSpan) {
         self.inner.hydrate(ctx, span)
     }
 
-    fn update(&mut self, ctx: &Context<TermApp>, msg: ComponentMsg) {
+    fn update(&mut self, ctx: &Context<WebTerminal<TermApp>>, msg: ComponentMsg) {
         self.inner.update(ctx, msg)
     }
 
@@ -101,7 +176,17 @@ impl AppBodyInner {
         }
     }
 
-    fn hydrate(&self, ctx: &Context<TermApp>, span: &mut DehydratedSpan) {
+    fn setup(&mut self, ctx: &Context<WebTerminal<TermApp>>) {
+        match self {
+            AppBodyInner::Home(inner) => inner.setup(ctx),
+            AppBodyInner::AllProjects(inner) => inner.setup(ctx),
+            AppBodyInner::Project(inner) => inner.setup(ctx),
+            AppBodyInner::Blog(inner) => inner.setup(ctx),
+            AppBodyInner::Post(inner) => inner.setup(ctx),
+        }
+    }
+
+    fn hydrate(&self, ctx: &Context<WebTerminal<TermApp>>, span: &mut DehydratedSpan) {
         match self {
             Self::Home(home) => home.hydrate(ctx, span),
             Self::AllProjects(projects) => projects.hydrate(ctx, span),
@@ -111,7 +196,7 @@ impl AppBodyInner {
         }
     }
 
-    fn update(&mut self, ctx: &Context<TermApp>, msg: ComponentMsg) {
+    fn update(&mut self, ctx: &Context<WebTerminal<TermApp>>, msg: ComponentMsg) {
         match (self, msg) {
             (Self::Home(body), ComponentMsg::Home(msg)) => body.update(msg),
             (Self::AllProjects(body), ComponentMsg::AllProjects(msg)) => body.update(ctx, msg),
@@ -144,13 +229,13 @@ pub enum AppBodyProps {
 }
 
 impl AppBodyProps {
-    fn create_body(self, ctx: &Context<TermApp>) -> AppBody {
+    fn create_body(self) -> AppBody {
         let inner = match self {
-            AppBodyProps::Home => AppBodyInner::Home(Home::create(ctx)),
-            AppBodyProps::AllProjects => AppBodyInner::AllProjects(AllProjects::create(ctx)),
-            AppBodyProps::Project(name) => AppBodyInner::Project(ProjectView::create(name, ctx)),
-            AppBodyProps::Blog => AppBodyInner::Blog(Blog::create(ctx)),
-            AppBodyProps::Post(name) => AppBodyInner::Post(Post::create(name, ctx)),
+            AppBodyProps::Home => AppBodyInner::Home(Home::create()),
+            AppBodyProps::AllProjects => AppBodyInner::AllProjects(AllProjects::create()),
+            AppBodyProps::Project(name) => AppBodyInner::Project(ProjectView::create(name)),
+            AppBodyProps::Blog => AppBodyInner::Blog(Blog::create()),
+            AppBodyProps::Post(name) => AppBodyInner::Post(Post::create(name)),
         };
         AppBody::new(inner)
     }
@@ -158,7 +243,6 @@ impl AppBodyProps {
 
 #[derive(Debug, From)]
 pub enum TermAppMsg {
-    Resized,
     Clicked(AppBodyProps),
     Scrolled(ScrollMotion),
     ComponentMsg(ComponentMsg),
@@ -188,6 +272,12 @@ pub enum ComponentMsg {
 }
 
 impl TermApp {
+    pub fn new(props: AppBodyProps) -> Self {
+        Self {
+            body: props.create_body(),
+        }
+    }
+
     fn draw(&self, area: Rect, frame: &mut Frame<'_>) {
         let chunks = Layout::new(
             Direction::Vertical,
@@ -242,6 +332,7 @@ impl TermApp {
     }
 }
 
+/*
 impl Component for TermApp {
     type Message = TermAppMsg;
     type Properties = TermAppProps;
@@ -308,7 +399,7 @@ impl Component for TermApp {
         window.set_ontouchmove(Some(&func));
 
         // Create the viewer
-        let body = ctx.props().body.clone().create_body(ctx);
+        let body = ctx.props().body.clone().create_body();
         Self { body }
     }
 
@@ -359,6 +450,7 @@ impl Component for TermApp {
         })
     }
 }
+*/
 
 impl From<AllProjectsMessage> for TermAppMsg {
     fn from(value: AllProjectsMessage) -> Self {

@@ -6,16 +6,16 @@ use ratatui::{
     prelude::*,
     widgets::{Block, Borders, Padding, Paragraph, Wrap},
 };
+use webatui::{WebTermMessage, WebTerminal, backend::DehydratedSpan};
 use yew::Context;
 
 use crate::{
     app::{ComponentMsg, ScrollMotion, TermApp},
     palette::GruvboxExt,
-    terminal::DehydratedSpan,
     utils::{padded_title, render_markdown, MdLine, ScrollRef},
 };
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Home {
     data: Paragraph<'static>,
     links: HashMap<String, String>,
@@ -28,14 +28,17 @@ pub enum HomeMessage {
 }
 
 impl Home {
-    pub fn create(ctx: &Context<TermApp>) -> Self {
+    pub fn setup(&self, ctx: &Context<WebTerminal<TermApp>>) {
         ctx.link().send_future(async move {
             let home = match Request::get("/api/v1/home").send().await {
                 Ok(resp) => resp.json().await.unwrap_or_default(),
                 Err(_) => HomePage::default(),
             };
-            ComponentMsg::Home(HomeMessage::Data(home))
+            WebTermMessage::new(ComponentMsg::Home(HomeMessage::Data(home)))
         });
+    }
+
+    pub fn create() -> Self {
         Self {
             data: Paragraph::default(),
             links: HashMap::new(),
@@ -50,7 +53,7 @@ impl Home {
         }
     }
 
-    pub fn hydrate(&self, _ctx: &Context<TermApp>, _span: &mut DehydratedSpan) {}
+    pub fn hydrate(&self, _ctx: &Context<WebTerminal<TermApp>>, _span: &mut DehydratedSpan) {}
 
     pub fn update(&mut self, msg: HomeMessage) {
         match msg {

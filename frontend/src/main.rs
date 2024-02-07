@@ -1,5 +1,5 @@
 #![warn(rust_2018_idioms)]
-#![deny(
+#![allow(
     rustdoc::broken_intra_doc_links,
     unreachable_pub,
     unreachable_patterns,
@@ -23,8 +23,15 @@ use app::{AppBodyProps, TermApp};
 use ratatui::prelude::*;
 use send_wrapper::SendWrapper;
 use terminal::WebTerm;
+use webatui::{
+    palette::gruvbox::{DarkHard, GruvboxPalette},
+    palette::Palette,
+    WebTermProps, WebTerminal,
+};
 use yew::{function_component, html, Html};
 use yew_router::prelude::*;
+
+use crate::app::TermAppProps;
 
 pub mod app;
 pub mod blog;
@@ -35,47 +42,6 @@ pub mod project;
 pub mod terminal;
 pub mod touch_scroll;
 pub mod utils;
-
-pub static TERMINAL: Renderer = Renderer::new();
-
-pub struct Renderer(OnceLock<Mutex<SendWrapper<Terminal<WebTerm>>>>);
-
-impl Renderer {
-    /// Construct the terminal renderer.
-    pub const fn new() -> Self {
-        Self(OnceLock::new())
-    }
-
-    /// Constructs the terminal renderer around a web term.
-    pub fn load(&self) {
-        self.0
-            .set(Mutex::new(SendWrapper::new(
-                Terminal::new(WebTerm::new()).unwrap(),
-            )))
-            .unwrap();
-    }
-
-    /// Get access to the terminal renderer.
-    pub fn term(&'static self) -> impl 'static + DerefMut<Target = Terminal<WebTerm>> {
-        TermDeref(self.0.get().unwrap().lock().unwrap())
-    }
-}
-
-struct TermDeref<'a>(MutexGuard<'a, SendWrapper<Terminal<WebTerm>>>);
-
-impl<'a> Deref for TermDeref<'a> {
-    type Target = Terminal<WebTerm>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl<'a> DerefMut for TermDeref<'a> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
 
 pub fn console_debug(s: impl Debug) {
     web_sys::console::log_1(&format!("{s:?}").into())
@@ -100,13 +66,19 @@ enum Route {
 }
 
 fn switch(route: Route) -> Html {
-    match route {
-        Route::Home => html! { <TermApp body = { AppBodyProps::Home } /> },
-        Route::AllProjects => html! { <TermApp body = { AppBodyProps::AllProjects } /> },
-        Route::Project { name } => html! { <TermApp body = { AppBodyProps::Project(name) } /> },
-        Route::Blog => html! { <TermApp body = { AppBodyProps::Blog } /> },
-        Route::Post { name } => html! { <TermApp body = { AppBodyProps::Post(name) } /> },
-    }
+    let body = match route {
+        Route::Home => AppBodyProps::Home,
+        Route::AllProjects => AppBodyProps::AllProjects,
+        Route::Project { name } => AppBodyProps::Project(name),
+        Route::Blog => AppBodyProps::Blog,
+        Route::Post { name } => AppBodyProps::Post(name),
+    };
+    let inner = TermApp::new(body);
+    let props = WebTermProps::new_with_palette(
+        inner,
+        Palette::GruvboxPalette(GruvboxPalette::DarkHard(DarkHard)),
+    );
+    html! { <WebTerminal<TermApp> ..props /> }
 }
 
 #[function_component]
@@ -120,8 +92,6 @@ fn App() -> Html {
 }
 
 fn main() {
-    // Load the webterm "terminal" and ratatui renderer
-    TERMINAL.load();
     // Render the app
     yew::Renderer::<App>::new().render();
 }

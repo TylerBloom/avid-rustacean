@@ -33,13 +33,13 @@ impl GruvboxExt for GruvboxColor {
             },
             GruvboxColor::Accent(c) => match c {
                 GruvboxAccent::Red => 8,
-                GruvboxAccent::BurntOrange => 9,
-                GruvboxAccent::Orange => 10,
-                GruvboxAccent::Yellow => 11,
-                GruvboxAccent::Green => 12,
-                GruvboxAccent::Teal => 13,
-                GruvboxAccent::Blue => 14,
-                GruvboxAccent::Pink => 15,
+                GruvboxAccent::Orange => 9,
+                GruvboxAccent::Yellow => 10,
+                GruvboxAccent::Green => 11,
+                GruvboxAccent::Teal => 12,
+                GruvboxAccent::Blue => 13,
+                GruvboxAccent::Pink => 14,
+                GruvboxAccent::BurntOrange => 15,
             },
         }
     }

@@ -1,15 +1,15 @@
 use gloo_net::http::Request;
 use ratatui::prelude::*;
 use serde::Deserialize;
+use webatui::{WebTermMessage, WebTerminal, backend::DehydratedSpan};
 use yew::prelude::*;
 
 use crate::{
     app::{ScrollMotion, TermApp},
-    terminal::DehydratedSpan,
     utils::{Markdown, ScrollRef},
 };
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Post {
     title: String,
     body: Markdown,
@@ -27,10 +27,8 @@ pub struct PostData {
 }
 
 impl Post {
-    pub fn create(name: String, ctx: &Context<TermApp>) -> Self {
-        let mut real_name = String::with_capacity(name.len());
-        url_escape::decode_to_string(name, &mut real_name);
-        let cp_name = real_name.replace(' ', "-");
+    pub fn setup(&self, ctx: &Context<WebTerminal<TermApp>>) {
+        let cp_name = self.title.clone().replace(' ', "-");
         ctx.link().send_future(async move {
             let post = match Request::get(&format!("/api/v1/posts/{cp_name}"))
                 .send()
@@ -39,8 +37,13 @@ impl Post {
                 Ok(resp) => resp.json().await.unwrap_or_default(),
                 Err(_) => avid_rustacean_model::Post::default(),
             };
-            PostMessage::Post(post)
+            WebTermMessage::new(PostMessage::Post(post))
         });
+    }
+
+    pub fn create(name: String) -> Self {
+        let mut real_name = String::with_capacity(name.len());
+        url_escape::decode_to_string(name, &mut real_name);
         Self {
             title: real_name,
             body: Markdown::default(),
@@ -52,7 +55,7 @@ impl Post {
         None
     }
 
-    pub fn hydrate(&self, ctx: &Context<TermApp>, span: &mut DehydratedSpan) {
+    pub fn hydrate(&self, ctx: &Context<WebTerminal<TermApp>>, span: &mut DehydratedSpan) {
         self.body.hydrate(ctx, span)
     }
 
@@ -63,7 +66,7 @@ impl Post {
         }
     }
 
-    pub fn update(&mut self, _ctx: &Context<TermApp>, msg: PostMessage) {
+    pub fn update(&mut self, _ctx: &Context<WebTerminal<TermApp>>, msg: PostMessage) {
         match msg {
             PostMessage::Post(post) => {
                 self.body = Markdown::new(post.summary.title.clone(), post.body);
