@@ -3,14 +3,13 @@ use std::collections::{HashMap, HashSet};
 use avid_rustacean_model::{Project, ProjectSummary};
 use gloo_net::http::Request;
 use ratatui::{prelude::*, widgets::*};
-use webatui::{WebTermMessage, WebTerminal, backend::DehydratedSpan};
+use webatui::prelude::*;
 use yew::Context;
 use yew_router::prelude::*;
 
 use crate::{
     app::{AppBodyProps, ScrollMotion, TermApp},
     palette::{GruvboxColor, GruvboxExt},
-    terminal::{NeedsHydration},
     utils::{padded_title, render_markdown, Markdown, MdLine, ScrollRef},
     Route,
 };
@@ -73,7 +72,7 @@ impl ProjectView {
 
     pub fn handle_scroll(&mut self, _dir: ScrollMotion) {}
 
-    pub fn update(&mut self, _ctx: &Context<WebTerminal<TermApp>>, msg: ProjectMessage) {
+    pub fn update(&mut self, msg: ProjectMessage) {
         match msg {
             ProjectMessage::Body(body) => {
                 self.body = Markdown::new(body.summary.name.clone(), body.body);
@@ -120,7 +119,7 @@ impl AllProjects {
 
     pub fn handle_scroll(&mut self, _dir: ScrollMotion) {}
 
-    pub fn update(&mut self, ctx: &Context<WebTerminal<TermApp>>, msg: AllProjectsMessage) {
+    pub fn update(&mut self, ctx: TermContext<'_, TermApp>, msg: AllProjectsMessage) {
         match msg {
             AllProjectsMessage::ProjectSummaries(projects) => {
                 self.projects = projects
@@ -139,9 +138,11 @@ impl AllProjects {
             }
             AllProjectsMessage::Clicked(name) => {
                 let name = name.replace(' ', "-");
-                ctx.link()
+                ctx.ctx()
+                    .link()
                     .send_message(WebTermMessage::new(AppBodyProps::Project(name.clone())));
-                ctx.link()
+                ctx.ctx()
+                    .link()
                     .navigator()
                     .unwrap()
                     .push(&Route::Project { name });

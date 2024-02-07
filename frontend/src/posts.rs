@@ -66,7 +66,7 @@ impl Post {
         }
     }
 
-    pub fn update(&mut self, _ctx: &Context<WebTerminal<TermApp>>, msg: PostMessage) {
+    pub fn update(&mut self, msg: PostMessage) {
         match msg {
             PostMessage::Post(post) => {
                 self.body = Markdown::new(post.summary.title.clone(), post.body);

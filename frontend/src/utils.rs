@@ -5,13 +5,12 @@ use ratatui::{
     prelude::*,
     widgets::{block::Title, *},
 };
-use webatui::{WebTerminal, backend::DehydratedSpan};
+use webatui::prelude::*;
 use yew::Context;
 
 use crate::{
     app::TermApp,
     palette::GruvboxExt,
-    terminal::{get_raw_screen_size, NeedsHydration},
 };
 
 /// A container for managing the logic for a well-formated scroll bar.

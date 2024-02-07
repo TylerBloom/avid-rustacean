@@ -20,14 +20,9 @@ use std::{
 };
 
 use app::{AppBodyProps, TermApp};
+use base16_palettes::{Palette, palettes::{GruvboxPalette, GruvboxDarkHard}};
 use ratatui::prelude::*;
-use send_wrapper::SendWrapper;
-use terminal::WebTerm;
-use webatui::{
-    palette::gruvbox::{DarkHard, GruvboxPalette},
-    palette::Palette,
-    WebTermProps, WebTerminal,
-};
+use webatui::{WebTermProps, WebTerminal};
 use yew::{function_component, html, Html};
 use yew_router::prelude::*;
 
@@ -39,17 +34,7 @@ pub mod home;
 pub mod palette;
 pub mod posts;
 pub mod project;
-pub mod terminal;
-pub mod touch_scroll;
 pub mod utils;
-
-pub fn console_debug(s: impl Debug) {
-    web_sys::console::log_1(&format!("{s:?}").into())
-}
-
-pub fn console_log(s: impl Display) {
-    web_sys::console::log_1(&format!("{s}").into())
-}
 
 #[derive(Debug, Clone, Routable, PartialEq)]
 enum Route {
@@ -76,7 +61,7 @@ fn switch(route: Route) -> Html {
     let inner = TermApp::new(body);
     let props = WebTermProps::new_with_palette(
         inner,
-        Palette::GruvboxPalette(GruvboxPalette::DarkHard(DarkHard)),
+        Palette::GruvboxPalette(GruvboxPalette::GruvboxDarkHard(GruvboxDarkHard)),
     );
     html! { <WebTerminal<TermApp> ..props /> }
 }

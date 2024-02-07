@@ -3,14 +3,13 @@ use std::collections::{HashMap, HashSet};
 use avid_rustacean_model::PostSummary;
 use gloo_net::http::Request;
 use ratatui::{prelude::*, widgets::*};
-use webatui::{backend::DehydratedSpan, WebTermMessage, WebTerminal};
+use webatui::prelude::*;
 use yew::Context;
 use yew_router::prelude::*;
 
 use crate::{
     app::{AppBodyProps, ScrollMotion, TermApp},
     palette::{GruvboxColor, GruvboxExt},
-    terminal::NeedsHydration,
     utils::{padded_title, render_markdown, MdLine, ScrollRef},
     Route,
 };
@@ -68,7 +67,7 @@ impl Blog {
         }
     }
 
-    pub fn update(&mut self, ctx: &Context<WebTerminal<TermApp>>, msg: BlogMessage) {
+    pub fn update(&mut self, ctx: TermContext<'_, TermApp>, msg: BlogMessage) {
         match msg {
             BlogMessage::PostSummaries(summaries) => {
                 self.summaries = summaries
@@ -88,9 +87,9 @@ impl Blog {
             }
             BlogMessage::Clicked(name) => {
                 let name = name.replace(' ', "-");
-                ctx.link()
+                ctx.ctx().link()
                     .send_message(WebTermMessage::new(AppBodyProps::Post(name.clone())));
-                ctx.link().navigator().unwrap().push(&Route::Post { name });
+                ctx.ctx().link().navigator().unwrap().push(&Route::Post { name });
             }
         }
     }

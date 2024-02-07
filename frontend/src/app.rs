@@ -1,6 +1,6 @@
 use std::{cell::RefCell, cmp::Ordering, rc::Rc};
 
-use webatui::{TerminalApp, WebTermMessage, WebTerminal, backend::DehydratedSpan};
+use webatui::prelude::*;
 use yew::{Component, Context, Properties};
 use yew_router::scope_ext::RouterScopeExt;
 
@@ -10,16 +10,11 @@ use crate::{
     palette::{GruvboxColor, GruvboxExt},
     posts::{Post, PostMessage},
     project::{AllProjects, AllProjectsMessage, ProjectMessage, ProjectView},
-    terminal::NeedsHydration,
-    touch_scroll::TouchScroll,
     utils::{padded_title, ScrollRef},
     Route,
 };
 use derive_more::From;
-use js_sys::Function;
 use ratatui::{prelude::*, widgets::*};
-use wasm_bindgen::{prelude::Closure, JsValue};
-use web_sys::TouchEvent;
 use yew::prelude::*;
 
 /// This module contains all of the machinery to run the UI app. The UI app is a single page
@@ -40,24 +35,24 @@ impl TerminalApp for TermApp {
         self.body.setup(ctx);
     }
 
-    fn update(&mut self, ctx: &Context<WebTerminal<Self>>, msg: Self::Message) -> bool {
+    fn update(&mut self, ctx: TermContext<'_, Self>, msg: Self::Message) -> bool {
         match msg {
             TermAppMsg::ComponentMsg(msg) => self.body.update(ctx, msg),
             TermAppMsg::Scrolled(b) => self.body.handle_scroll(b),
             TermAppMsg::Clicked(page) => {
                 match &page {
-                    AppBodyProps::Home => ctx.link().navigator().unwrap().push(&Route::Home),
+                    AppBodyProps::Home => ctx.ctx().link().navigator().unwrap().push(&Route::Home),
                     AppBodyProps::AllProjects => {
-                        ctx.link().navigator().unwrap().push(&Route::AllProjects)
+                        ctx.ctx().link().navigator().unwrap().push(&Route::AllProjects)
                     }
-                    AppBodyProps::Blog => ctx.link().navigator().unwrap().push(&Route::Blog),
+                    AppBodyProps::Blog => ctx.ctx().link().navigator().unwrap().push(&Route::Blog),
                     AppBodyProps::Project(name) => {
-                        ctx.link().navigator().unwrap().push(&Route::Project {
+                        ctx.ctx().link().navigator().unwrap().push(&Route::Project {
                             name: name.to_owned(),
                         });
                     }
                     AppBodyProps::Post(name) => {
-                        ctx.link().navigator().unwrap().push(&Route::Post {
+                        ctx.ctx().link().navigator().unwrap().push(&Route::Post {
                             name: name.to_owned(),
                         });
                     }
@@ -152,7 +147,7 @@ impl AppBody {
         self.inner.hydrate(ctx, span)
     }
 
-    fn update(&mut self, ctx: &Context<WebTerminal<TermApp>>, msg: ComponentMsg) {
+    fn update(&mut self, ctx: TermContext<'_, TermApp>, msg: ComponentMsg) {
         self.inner.update(ctx, msg)
     }
 
@@ -196,13 +191,13 @@ impl AppBodyInner {
         }
     }
 
-    fn update(&mut self, ctx: &Context<WebTerminal<TermApp>>, msg: ComponentMsg) {
+    fn update(&mut self, ctx: TermContext<'_, TermApp>, msg: ComponentMsg) {
         match (self, msg) {
             (Self::Home(body), ComponentMsg::Home(msg)) => body.update(msg),
             (Self::AllProjects(body), ComponentMsg::AllProjects(msg)) => body.update(ctx, msg),
-            (Self::Project(body), ComponentMsg::Project(msg)) => body.update(ctx, msg),
+            (Self::Project(body), ComponentMsg::Project(msg)) => body.update(msg),
             (Self::Blog(body), ComponentMsg::Blog(msg)) => body.update(ctx, msg),
-            (Self::Post(body), ComponentMsg::Post(msg)) => body.update(ctx, msg),
+            (Self::Post(body), ComponentMsg::Post(msg)) => body.update(msg),
             _ => unreachable!("How did you get here? Open a PR, please"),
         }
     }
@@ -331,126 +326,6 @@ impl TermApp {
         frame.render_widget(tabs, rect);
     }
 }
-
-/*
-impl Component for TermApp {
-    type Message = TermAppMsg;
-    type Properties = TermAppProps;
-
-    fn create(ctx: &Context<Self>) -> Self {
-        let window = web_sys::window().unwrap();
-        // Bind a function to the "on-resize" window event
-        let cb = ctx.link().callback(|()| TermAppMsg::Resized);
-        let func = move || cb.emit(());
-        let func: Function = Closure::<dyn 'static + Fn()>::new(func)
-            .into_js_value()
-            .into();
-        window.set_onresize(Some(&func));
-        // Bind a function to the "on-wheel" window event
-        let cb = ctx.link().callback(|msg: TermAppMsg| msg);
-        let func = move |event: JsValue| {
-            let event: WheelEvent = event.into();
-            match event.delta_y().partial_cmp(&0.0) {
-                Some(Ordering::Less) => cb.emit(TermAppMsg::Scrolled(ScrollMotion::Down)),
-                Some(Ordering::Greater) => cb.emit(TermAppMsg::Scrolled(ScrollMotion::Up)),
-                _ => {}
-            }
-        };
-        let func: Function = Closure::<dyn 'static + Fn(JsValue)>::new(func)
-            .into_js_value()
-            .into();
-        window.set_onwheel(Some(&func));
-
-        // In order to emulate scrolling on mobile, a simple (perhaps too simple) approach is
-        // taken. Touch events are started in an accumulator behind a `RefCell`. This accumulator
-        // tracks when two touches should be connected and tracks the overall progress. When enough
-        // progress has been made, a scroll message is emitted. This approach is a bit naive, but
-        // we're going for functional first
-
-        // Bind a function to the "touch-start" window event
-        let acc = Rc::new(RefCell::new(TouchScroll::new()));
-        let acc_start = Rc::clone(&acc);
-        let func = move |event: JsValue| {
-            let event: TouchEvent = event.into();
-            if let Some(touch) = event.touches().get(0) {
-                acc_start.borrow_mut().init_touch(&touch);
-            }
-        };
-        let func: Function = Closure::<dyn 'static + Fn(JsValue)>::new(func)
-            .into_js_value()
-            .into();
-        window.set_ontouchstart(Some(&func));
-
-        // Bind a function to the "touch-move" window event
-        let acc_move = Rc::clone(&acc);
-        let cb = ctx.link().callback(|msg: TermAppMsg| msg);
-        let func = move |event: JsValue| {
-            let event: TouchEvent = event.into();
-            if let Some(touch) = event.touches().get(0) {
-                acc_move
-                    .borrow_mut()
-                    .add_touch(&touch)
-                    .for_each(|scroll| cb.emit(scroll.into()));
-            }
-        };
-        let func: Function = Closure::<dyn 'static + Fn(JsValue)>::new(func)
-            .into_js_value()
-            .into();
-        window.set_ontouchmove(Some(&func));
-
-        // Create the viewer
-        let body = ctx.props().body.clone().create_body();
-        Self { body }
-    }
-
-    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
-        match msg {
-            TermAppMsg::Resized => TERMINAL.term().backend_mut().resize_buffer(),
-            TermAppMsg::ComponentMsg(msg) => self.body.update(ctx, msg),
-            TermAppMsg::Scrolled(b) => self.body.handle_scroll(b),
-            TermAppMsg::Clicked(page) => {
-                match &page {
-                    AppBodyProps::Home => ctx.link().navigator().unwrap().push(&Route::Home),
-                    AppBodyProps::AllProjects => {
-                        ctx.link().navigator().unwrap().push(&Route::AllProjects)
-                    }
-                    AppBodyProps::Blog => ctx.link().navigator().unwrap().push(&Route::Blog),
-                    AppBodyProps::Project(name) => {
-                        ctx.link().navigator().unwrap().push(&Route::Project {
-                            name: name.to_owned(),
-                        });
-                    }
-                    AppBodyProps::Post(name) => {
-                        ctx.link().navigator().unwrap().push(&Route::Post {
-                            name: name.to_owned(),
-                        });
-                    }
-                }
-                self.body = page.create_body(ctx);
-            }
-        }
-        true
-    }
-
-    fn view(&self, ctx: &Context<Self>) -> Html {
-        let mut term = TERMINAL.term();
-        let area = term.size().unwrap();
-        term.draw(|frame| self.draw(area, frame)).unwrap();
-        term.backend_mut().hydrate(|span| match span.text().trim() {
-            "Home" => span.on_click(ctx.link().callback(|_| AppBodyProps::Home)),
-            "Projects" => span.on_click(ctx.link().callback(|_| AppBodyProps::AllProjects)),
-            "Blog" => span.on_click(ctx.link().callback(|_| AppBodyProps::Blog)),
-            "Repo" => span.hyperlink("https://github.com/TylerBloom/avid-rustacean".to_owned()),
-            "Email" => span.hyperlink("mailto:tylerbloom2222@gmail.com".to_owned()),
-            "GitHub" => span.hyperlink("https://github.com/TylerBloom".to_owned()),
-            "LinkedIn" => {
-                span.hyperlink("https://www.linkedin.com/in/tyler-bloom-aba0a4156/".to_owned())
-            }
-            _ => self.body.hydrate(ctx, span),
-        })
-    }
-}
-*/
 
 impl From<AllProjectsMessage> for TermAppMsg {
     fn from(value: AllProjectsMessage) -> Self {
