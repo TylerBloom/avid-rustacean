@@ -9,7 +9,7 @@ The blog is fully Rust (front and back ends) and is split into three crates, `ba
 The backend uses Axum as its REST framework and MongoDB as its database.
 When deployed, the backend's build script compiles the frontend assets (the HTML index, the WASM module, and the JS bridge code) and statically binds them into the server executable.
 
-The frontend uses a combination of Yew and Ratatui to provide a TUI aesthetic in the broswer.
+The frontend uses a combination of Yew and Ratatui to provide a TUI aesthetic in the browser.
 To see how this is done, check out [the article](https://avid-rustacean.shuttleapp.rs/blog/About-This-Blog) that I wrote about its creation.
 
 Lastly, the model crate contains common code between the front and back ends (and a bit extra).
@@ -33,7 +33,7 @@ Next, the frontend.
 You'll need to make sure you have the `wasm32-unknown-unknown` target installed via `rustup` (or however you manage your Rust toolchains).
 For local deployments, you will need [Trunk](https://trunkrs.dev/), which you can install via cargo with `cargo install trunk`.
 
-For running everything, you'll launch the front and back ends seperately.
+For running everything, you'll launch the front and back ends separately.
 In the `backend` directory, simply run `cargo shuttle run`.
 This will compile and run the backend server, which will listen to requests on port 8000.
 If you change the backend, you will need to re-run this.
