@@ -1,7 +1,7 @@
 use gloo_net::http::Request;
 use ratatui::prelude::*;
 use serde::Deserialize;
-use webatui::{WebTermMessage, WebTerminal, backend::DehydratedSpan};
+use webatui::{backend::DehydratedSpan, WebTermMessage, WebTerminal};
 use yew::prelude::*;
 
 use crate::{

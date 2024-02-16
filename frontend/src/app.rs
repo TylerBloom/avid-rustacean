@@ -42,9 +42,12 @@ impl TerminalApp for TermApp {
             TermAppMsg::Clicked(page) => {
                 match &page {
                     AppBodyProps::Home => ctx.ctx().link().navigator().unwrap().push(&Route::Home),
-                    AppBodyProps::AllProjects => {
-                        ctx.ctx().link().navigator().unwrap().push(&Route::AllProjects)
-                    }
+                    AppBodyProps::AllProjects => ctx
+                        .ctx()
+                        .link()
+                        .navigator()
+                        .unwrap()
+                        .push(&Route::AllProjects),
                     AppBodyProps::Blog => ctx.ctx().link().navigator().unwrap().push(&Route::Blog),
                     AppBodyProps::Project(name) => {
                         ctx.ctx().link().navigator().unwrap().push(&Route::Project {

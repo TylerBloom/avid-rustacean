@@ -20,7 +20,10 @@ use std::{
 };
 
 use app::{AppBodyProps, TermApp};
-use base16_palettes::{Palette, palettes::{GruvboxPalette, GruvboxDarkHard}};
+use base16_palettes::{
+    palettes::{GruvboxDarkHard, GruvboxPalette},
+    Palette,
+};
 use ratatui::prelude::*;
 use webatui::{WebTermProps, WebTerminal};
 use yew::{function_component, html, Html};

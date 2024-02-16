@@ -6,7 +6,7 @@ use ratatui::{
     prelude::*,
     widgets::{Block, Borders, Padding, Paragraph, Wrap},
 };
-use webatui::{WebTermMessage, WebTerminal, backend::DehydratedSpan};
+use webatui::{backend::DehydratedSpan, WebTermMessage, WebTerminal};
 use yew::Context;
 
 use crate::{

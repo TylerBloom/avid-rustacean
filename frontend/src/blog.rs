@@ -87,9 +87,14 @@ impl Blog {
             }
             BlogMessage::Clicked(name) => {
                 let name = name.replace(' ', "-");
-                ctx.ctx().link()
+                ctx.ctx()
+                    .link()
                     .send_message(WebTermMessage::new(AppBodyProps::Post(name.clone())));
-                ctx.ctx().link().navigator().unwrap().push(&Route::Post { name });
+                ctx.ctx()
+                    .link()
+                    .navigator()
+                    .unwrap()
+                    .push(&Route::Post { name });
             }
         }
     }
