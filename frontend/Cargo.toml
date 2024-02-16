@@ -13,7 +13,7 @@ panic = "abort"
 
 [dependencies]
 avid-rustacean-model = { path = "../model" }
-webatui = { path = "../../webatui" }
+webatui = { version = "0.1" }
 ratatui = { version = "0.25", default-features = false, features = ["all-widgets", "unstable-rendered-line-info"] }
 yew = { version = "0.21", features = ["csr"] }
 yew-router = { version = "0.18" }
