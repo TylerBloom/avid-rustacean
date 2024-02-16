@@ -1,11 +1,11 @@
 use gloo_net::http::Request;
 use ratatui::prelude::*;
 use serde::Deserialize;
-use webatui::{backend::DehydratedSpan, WebTermMessage, WebTerminal};
+use webatui::{backend::DehydratedSpan, ScrollMotion, WebTermMessage, WebTerminal};
 use yew::prelude::*;
 
 use crate::{
-    app::{ScrollMotion, TermApp},
+    app::TermApp,
     utils::{Markdown, ScrollRef},
 };
 

@@ -8,7 +8,7 @@ use yew::Context;
 use yew_router::prelude::*;
 
 use crate::{
-    app::{AppBodyProps, ScrollMotion, TermApp},
+    app::{AppBodyProps, TermApp},
     palette::{GruvboxColor, GruvboxExt},
     utils::{padded_title, render_markdown, Markdown, MdLine, ScrollRef},
     Route,

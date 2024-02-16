@@ -1,6 +1,6 @@
 use std::{cell::RefCell, cmp::Ordering, rc::Rc};
 
-use webatui::prelude::*;
+use webatui::{prelude::*, ScrollMotion};
 use yew::{Component, Context, Properties};
 use yew_router::scope_ext::RouterScopeExt;
 
@@ -35,10 +35,14 @@ impl TerminalApp for TermApp {
         self.body.setup(ctx);
     }
 
+    fn scroll(&mut self, scroll: ScrollMotion) -> bool {
+        self.body.handle_scroll(scroll);
+        true
+    }
+
     fn update(&mut self, ctx: TermContext<'_, Self>, msg: Self::Message) -> bool {
         match msg {
             TermAppMsg::ComponentMsg(msg) => self.body.update(ctx, msg),
-            TermAppMsg::Scrolled(b) => self.body.handle_scroll(b),
             TermAppMsg::Clicked(page) => {
                 match &page {
                     AppBodyProps::Home => ctx.ctx().link().navigator().unwrap().push(&Route::Home),
@@ -61,6 +65,7 @@ impl TerminalApp for TermApp {
                     }
                 }
                 self.body = page.create_body();
+                self.body.setup(ctx.ctx())
             }
         }
         true
@@ -242,14 +247,7 @@ impl AppBodyProps {
 #[derive(Debug, From)]
 pub enum TermAppMsg {
     Clicked(AppBodyProps),
-    Scrolled(ScrollMotion),
     ComponentMsg(ComponentMsg),
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ScrollMotion {
-    Up,
-    Down,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -319,7 +317,7 @@ impl TermApp {
             Span::from(" | "),
             Span::styled("GitHub", GruvboxColor::blue().fg_style().to_hydrate()),
             Span::from(" | "),
-            Span::styled("LinkdIn", GruvboxColor::blue().fg_style().to_hydrate()),
+            Span::styled("LinkedIn", GruvboxColor::blue().fg_style().to_hydrate()),
             Span::from(" "),
         ])
         .alignment(Alignment::Right);

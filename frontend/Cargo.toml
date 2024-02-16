@@ -13,13 +13,13 @@ panic = "abort"
 
 [dependencies]
 avid-rustacean-model = { path = "../model" }
-webatui = { path = "../../webatui" }
-ratatui = { version = "0.25", default-features = false, features = ["all-widgets", "unstable-rendered-line-info"] }
+webatui = { version = "0.1" }
+ratatui = { version = "0.26", default-features = false, features = ["all-widgets", "unstable-rendered-line-info"] }
 yew = { version = "0.21", features = ["csr"] }
 yew-router = { version = "0.18" }
 derive_more = "0.99.17"
 url-escape = "0.1.1"
 serde = { version = "1.0.193", features = ["derive"] }
 gloo-net = { version = "0.5", features = ["json", "http"] }
-implicit-clone = "=0.4.8"
+implicit-clone = "=0.4.9"
 base16-palettes = { version = "0.1.0", features = ["gruvbox"] }

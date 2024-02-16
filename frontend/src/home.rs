@@ -6,11 +6,11 @@ use ratatui::{
     prelude::*,
     widgets::{Block, Borders, Padding, Paragraph, Wrap},
 };
-use webatui::{backend::DehydratedSpan, WebTermMessage, WebTerminal};
+use webatui::{backend::DehydratedSpan, ScrollMotion, WebTermMessage, WebTerminal};
 use yew::Context;
 
 use crate::{
-    app::{ComponentMsg, ScrollMotion, TermApp},
+    app::{ComponentMsg, TermApp},
     palette::GruvboxExt,
     utils::{padded_title, render_markdown, MdLine, ScrollRef},
 };
