@@ -61,6 +61,7 @@ impl TerminalApp for TermApp {
                     }
                 }
                 self.body = page.create_body();
+                self.body.setup(ctx.ctx())
             }
         }
         true
@@ -319,7 +320,7 @@ impl TermApp {
             Span::from(" | "),
             Span::styled("GitHub", GruvboxColor::blue().fg_style().to_hydrate()),
             Span::from(" | "),
-            Span::styled("LinkdIn", GruvboxColor::blue().fg_style().to_hydrate()),
+            Span::styled("LinkedIn", GruvboxColor::blue().fg_style().to_hydrate()),
             Span::from(" "),
         ])
         .alignment(Alignment::Right);
