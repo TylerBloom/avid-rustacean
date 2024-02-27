@@ -11,7 +11,7 @@ env:
 
 jobs:
   tests:
-    name: Tests
+    needs: code_cleaniness_checks
     runs-on: ubuntu-latest
     steps:
       - name: Setup Rust
