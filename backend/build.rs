@@ -12,26 +12,24 @@ fn main() -> Result<(), i32> {
     if std::env::var("HOSTNAME")
         .unwrap_or_default()
         .contains("shuttle")
+        || env::var("PROFILE")
+            .map(|v| v == "release")
+            .unwrap_or_default()
     {
-        compile_fe()?;
-    } else if env::var("PROFILE")
-        .map(|v| v == "release")
-        .unwrap_or_default()
-    {
-        compile_fe()?;
+        compile_fe();
     }
     Ok(())
 }
 
-fn compile_fe() -> Result<(), i32> {
+fn compile_fe() {
     // Calls trunk to compile the frontend
     let mut cmd = Command::new("trunk");
     cmd.args(["build", "-d", "../assets", "--filehash", "false"]);
 
     cmd.arg("--release");
     cmd.arg("../frontend/index.html");
-    if cmd.status().is_err() {
-        return Err(1);
+    if let Err(e) = cmd.status() {
+        panic!("Failed to compile frontend!\n{e}");
     }
 
     // Compresses the WASM module
@@ -42,6 +40,7 @@ fn compile_fe() -> Result<(), i32> {
 
     let output_file = File::create("../assets/avid-rustacean-frontend_bg.wasm.gz").unwrap();
     let mut encoder = GzEncoder::new(BufWriter::new(output_file), Compression::default());
-    encoder.write_all(&wasm_data).map_err(|_| 1)?;
-    Ok(())
+    if let Err(e) = encoder.write_all(&wasm_data).map_err(|_| 1) {
+        panic!("Failed to compress WASM module!\n{e}");
+    }
 }
