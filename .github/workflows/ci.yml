@@ -10,6 +10,19 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  code_cleaniness_checks:
+    name: Formatting Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Rust
+        uses: hecrj/setup-rust-action@v2
+        with:
+          rust-version: nightly
+          components: rustfmt
+      - uses: actions/checkout@v4
+      - run: cargo fmt --check --package avid-rustacean-model
+      - run: cargo fmt --check --manifest-path frontend/Cargo.toml
+      - run: cargo fmt --check --package avid-rustacean-backend
   tests:
     needs: code_cleaniness_checks
     runs-on: ubuntu-latest
