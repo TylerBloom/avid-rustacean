@@ -7,7 +7,7 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
-use tracing::{info, error};
+use tracing::{error, info};
 
 use crate::{state::AppState, AccessGaurd};
 
