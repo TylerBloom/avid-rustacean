@@ -7,7 +7,7 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
-use tracing::info;
+use tracing::{info, error};
 
 use crate::{state::AppState, AccessGaurd};
 
@@ -22,7 +22,7 @@ pub async fn create_post(
 ) -> (StatusCode, Json<Markdown>) {
     info!("Creating post with title: {title:?}");
     let Ok(body) = body.parse::<Markdown>() else {
-        println!("Failed to parse post body...");
+        error!("Failed to parse post body...");
         return (StatusCode::BAD_REQUEST, Json(Markdown::default()));
     };
     let Ok(summary) = summary.parse::<Markdown>() else {

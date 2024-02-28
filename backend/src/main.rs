@@ -56,12 +56,6 @@ async fn badge_api() -> Json<Badge> {
     })
 }
 
-#[allow(unused_variables)]
-async fn print(body: String) {
-    #[cfg(debug_assertions)]
-    println!("Print API called:\n{body}");
-}
-
 #[shuttle_runtime::main]
 async fn axum(
     #[shuttle_shared_db::MongoDb] db_conn: Database,
@@ -94,7 +88,6 @@ async fn axum(
         .route("/api/v1/projects", get(get_all_projects))
         .route("/api/v1/projects/:name", get(get_projects))
         // Misc
-        .route("/api/v1/print", post(print))
         .route("/api/v1/badge", get(badge_api));
 
     #[cfg(not(debug_assertions))]

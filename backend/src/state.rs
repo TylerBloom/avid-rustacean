@@ -4,9 +4,47 @@ use std::{
 };
 
 use avid_rustacean_model::*;
+use chrono::DateTime;
 use futures::StreamExt;
 use mongodb::{bson::Document, Collection, Database};
+use serde::Deserialize;
 use tracing::{error, warn};
+
+/// A struct used to store post data in files. This is used to store a post's data in a TOML file
+/// so that it can be diff by git. The AppState uses this model as its source of truth on start up.
+/// Doing so allows corrections by readers to be made via a PR and incorporated without needing to
+/// go through the post creation API.
+#[derive(Debug, Deserialize)]
+struct FileData {
+    title: String,
+    summary: String,
+    body: String,
+    created: String,
+}
+
+impl FileData {
+    fn into_post(self) -> Post {
+        let body = self.body.parse().unwrap();
+        let summary = self.summary.parse().unwrap();
+        let summary = PostSummary {
+            title: self.title,
+            summary,
+            create_on: DateTime::parse_from_rfc3339(&self.created).unwrap().into(),
+            last_edit: None,
+        };
+        Post { summary, body }
+    }
+
+    fn into_project(self) -> Project {
+        let body = self.body.parse().unwrap();
+        let summary = self.summary.parse().unwrap();
+        let summary = ProjectSummary {
+            name: self.title,
+            summary,
+        };
+        Project { summary, body }
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct AppState {
@@ -47,35 +85,72 @@ impl AppState {
         }
 
         // Blog
+        let file_posts: HashMap<String, FileData> =
+            toml::from_str(include_str!("../../content/posts.toml")).unwrap();
+
+        let mut posts = HashMap::with_capacity(file_posts.len());
+        for (name, post) in file_posts {
+            posts.insert(name, Arc::new(post.into_post()));
+        }
+
         let table = self.get_blog_table();
-        let mut posts = HashMap::new();
         let mut cursor = table.find(None, None).await.unwrap();
         while let Some(post) = cursor.next().await {
             match post {
-                Ok(post) => {
-                    posts.insert(post.summary.title.clone(), Arc::new(post));
-                }
+                Ok(post) => match posts.get(&post.summary.title) {
+                    Some(p) if p.as_ref() != &post => {
+                        let doc: Document = mongodb::bson::to_raw_document_buf(&post)
+                            .unwrap()
+                            .try_into()
+                            .unwrap();
+                        let _ = table.delete_one(doc, None).await;
+                        let _ = table.insert_one(&post, None).await;
+                    }
+                    Some(_) => {}
+                    None => {
+                        posts.insert(post.summary.title.clone(), Arc::new(post));
+                    }
+                },
                 Err(e) => {
                     error!("Failed to deserialize post!! Got error: {e}");
                 }
             }
         }
+
         let mut sums: Vec<_> = posts.values().map(|p| p.summary.clone()).collect();
         sums.sort_by(|a, b| a.create_on.cmp(&b.create_on));
         *self.post_sums.write().unwrap() = Arc::new(sums);
         *self.posts.write().unwrap() = posts;
 
         // Projects
+        let file_projects: HashMap<String, FileData> =
+            toml::from_str(include_str!("../../content/projects.toml")).unwrap();
+
+        let mut projects = HashMap::with_capacity(file_projects.len());
+        for (name, post) in file_projects {
+            projects.insert(name, Arc::new(post.into_project()));
+        }
+
         let table = self.get_projects_table();
-        let mut projects = HashMap::new();
         let mut cursor = table.find(None, None).await.unwrap();
         while let Some(project) = cursor.next().await {
             match project {
-                Ok(project) => {
-                    projects.insert(project.summary.name.clone(), Arc::new(project));
-                }
+                Ok(project) => match projects.get(&project.summary.name) {
+                    Some(p) if p.as_ref() != &project => {
+                        let doc: Document = mongodb::bson::to_raw_document_buf(&project)
+                            .unwrap()
+                            .try_into()
+                            .unwrap();
+                        let _ = table.delete_one(doc, None).await;
+                        let _ = table.insert_one(&project, None).await;
+                    }
+                    Some(_) => {}
+                    None => {
+                        projects.insert(project.summary.name.clone(), Arc::new(project));
+                    }
+                },
                 Err(e) => {
-                    error!("Failed to deserialize project!! Got error: {e}");
+                    error!("Failed to deserialize post!! Got error: {e}");
                 }
             }
         }
