@@ -159,6 +159,27 @@ impl GruvboxColor {
     pub const fn pink() -> Self {
         Self::Accent(GruvboxAccent::Pink)
     }
+
+    pub const fn hex_str(&self) -> &'static str {
+        match self {
+            GruvboxColor::Neutral(GruvboxNeutral::Dark(Shade::Darkest)) => "#1d2021",
+            GruvboxColor::Neutral(GruvboxNeutral::Dark(Shade::Darker)) => "#3c3836",
+            GruvboxColor::Neutral(GruvboxNeutral::Dark(Shade::Lighter)) => "#504945",
+            GruvboxColor::Neutral(GruvboxNeutral::Dark(Shade::Lightest)) => "#665c54",
+            GruvboxColor::Neutral(GruvboxNeutral::Light(Shade::Darkest)) => "#bdae93",
+            GruvboxColor::Neutral(GruvboxNeutral::Light(Shade::Darker)) => "#d5c4a1",
+            GruvboxColor::Neutral(GruvboxNeutral::Light(Shade::Lighter)) => "#ebdbb2",
+            GruvboxColor::Neutral(GruvboxNeutral::Light(Shade::Lightest)) => "#fbf1c7",
+            GruvboxColor::Accent(GruvboxAccent::Red) => "#fb4934",
+            GruvboxColor::Accent(GruvboxAccent::BurntOrange) => "#d65d0e",
+            GruvboxColor::Accent(GruvboxAccent::Orange) => "#fe8019",
+            GruvboxColor::Accent(GruvboxAccent::Yellow) => "#fabd2f",
+            GruvboxColor::Accent(GruvboxAccent::Green) => "#b8bb26",
+            GruvboxColor::Accent(GruvboxAccent::Teal) => "#8ec07c",
+            GruvboxColor::Accent(GruvboxAccent::Blue) => "#83a598",
+            GruvboxColor::Accent(GruvboxAccent::Pink) => "#d3869b",
+        }
+    }
 }
 
 // Darks

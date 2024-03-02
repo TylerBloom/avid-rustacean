@@ -1,5 +1,6 @@
 use std::{
     collections::HashMap,
+    ops::Deref,
     sync::{Arc, RwLock},
 };
 
@@ -9,6 +10,8 @@ use futures::StreamExt;
 use mongodb::{bson::Document, Collection, Database};
 use serde::Deserialize;
 use tracing::{error, warn};
+
+use crate::rss::RssManager;
 
 /// A struct used to store post data in files. This is used to store a post's data in a TOML file
 /// so that it can be diff by git. The AppState uses this model as its source of truth on start up.
@@ -48,6 +51,7 @@ impl FileData {
 
 #[derive(Debug, Clone)]
 pub struct AppState {
+    pub rss: Arc<RwLock<RssManager>>,
     home: Arc<RwLock<Arc<HomePage>>>,
     posts: Arc<RwLock<HashMap<String, Arc<Post>>>>,
     post_sums: Arc<RwLock<Arc<Vec<PostSummary>>>>,
@@ -68,6 +72,7 @@ impl AppState {
             projects: Arc::new(RwLock::new(HashMap::new())),
             post_sums: Arc::new(RwLock::new(Arc::new(Vec::new()))),
             proj_sums: Arc::new(RwLock::new(Arc::new(Vec::new()))),
+            rss: Arc::new(RwLock::new(RssManager::new())),
             db,
         }
     }
@@ -119,6 +124,10 @@ impl AppState {
 
         let mut sums: Vec<_> = posts.values().map(|p| p.summary.clone()).collect();
         sums.sort_by(|a, b| a.create_on.cmp(&b.create_on));
+        self.rss.write().unwrap().load(
+            sums.iter()
+                .filter_map(|sum| posts.get(&sum.title).map(Deref::deref)),
+        );
         *self.post_sums.write().unwrap() = Arc::new(sums);
         *self.posts.write().unwrap() = posts;
 
@@ -198,6 +207,7 @@ impl AppState {
             .insert(post.summary.title.clone(), Arc::new(post.clone()))
             .is_none()
         {
+            self.rss.write().unwrap().add_post(&post);
             let mut lock = self.post_sums.write().unwrap();
             let mut sums = Vec::clone(&lock);
             sums.push(post.summary.clone());

@@ -13,11 +13,15 @@
     clippy::all
 )]
 
+/// The address of the server, used for the RSS feed.
+pub static SERVER_ADDRESS: &str = "https://avid-rustacean.shuttle.rs";
+
 use std::sync::OnceLock;
 
 use axum::{async_trait, extract::FromRequestParts, routing::*, Json, Router};
 use http::{request::Parts, StatusCode};
 use mongodb::Database;
+use rss::get_rss;
 use serde::Serialize;
 use sha2::Digest;
 
@@ -26,6 +30,7 @@ pub mod assets;
 pub mod home;
 pub mod posts;
 pub mod projects;
+pub mod rss;
 pub mod state;
 
 use home::*;
@@ -75,6 +80,8 @@ async fn axum(
     state.load().await;
 
     let app = Router::new()
+        // Homepage-related routes
+        .route("/api/v1/rss", get(get_rss))
         // Homepage-related routes
         .route("/api/v1/home", post(update_homepage))
         .route("/api/v1/home", get(get_homepage))
