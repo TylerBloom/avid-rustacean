@@ -95,7 +95,7 @@ impl TerminalApp for TermApp {
             ),
             "Repo" => span.hyperlink("https://github.com/TylerBloom/avid-rustacean".to_owned()),
             "Email" => span.hyperlink("mailto:tylerbloom2222@gmail.com".to_owned()),
-            "GitHub" => span.hyperlink("https://github.com/TylerBloom".to_owned()),
+            "RSS" => span.hyperlink("/api/v1/rss".to_owned()),
             "LinkedIn" => {
                 span.hyperlink("https://www.linkedin.com/in/tyler-bloom-aba0a4156/".to_owned())
             }
@@ -311,11 +311,11 @@ impl TermApp {
 
     fn draw_footer(&self, rect: Rect, frame: &mut Frame<'_>) {
         let line = Line::from(vec![
+            Span::styled("RSS", GruvboxColor::blue().fg_style().to_hydrate()),
+            Span::from(" | "),
             Span::styled("Email", GruvboxColor::blue().fg_style().to_hydrate()),
             Span::from(" | "),
             Span::styled("Repo", GruvboxColor::blue().fg_style().to_hydrate()),
-            Span::from(" | "),
-            Span::styled("GitHub", GruvboxColor::blue().fg_style().to_hydrate()),
             Span::from(" | "),
             Span::styled("LinkedIn", GruvboxColor::blue().fg_style().to_hydrate()),
             Span::from(" "),

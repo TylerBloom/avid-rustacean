@@ -11,8 +11,9 @@ use std::{fmt::Write, sync::Arc};
 
 use avid_rustacean_model::{MdNode, Post};
 use axum::{extract::State, response::Response};
+use chrono::Utc;
 use http::header::CONTENT_TYPE;
-use rss::{Channel, ChannelBuilder, ItemBuilder};
+use rss::{Channel, ChannelBuilder, Guid, ItemBuilder};
 use tracing::error;
 
 use crate::{state::AppState, SERVER_ADDRESS};
@@ -47,6 +48,7 @@ impl RssManager {
 
     fn update_rss(&mut self) {
         let mut new_rss = Vec::new();
+        self.channel.set_last_build_date(Some(Utc::now().to_rfc3339()));
         if let Err(e) = self.channel.write_to(&mut new_rss) {
             error!("Failed to generate RSS doc! Got error: {e}");
         }
@@ -65,12 +67,18 @@ impl RssManager {
 
     pub fn add_post(&mut self, post: &Post) {
         let mut builder = ItemBuilder::default();
+        let link = format!(
+            "{SERVER_ADDRESS}/blog/{}",
+            url_escape::encode_path(&post.summary.title)
+        );
+        let guid = Guid {
+            value: link.clone(),
+            permalink: true,
+        };
         builder
             .title(Some(post.summary.title.clone()))
-            .link(Some(format!(
-                "{SERVER_ADDRESS}/blog/{}",
-                url_escape::encode_path(&post.summary.title)
-            )))
+            .guid(Some(guid))
+            .link(Some(link))
             .pub_date(Some(post.summary.create_on.to_string()));
         let mut body = String::new();
         let mut header_count = 0;

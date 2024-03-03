@@ -126,6 +126,7 @@ impl AppState {
         sums.sort_by(|a, b| a.create_on.cmp(&b.create_on));
         self.rss.write().unwrap().load(
             sums.iter()
+                .rev()
                 .filter_map(|sum| posts.get(&sum.title).map(Deref::deref)),
         );
         *self.post_sums.write().unwrap() = Arc::new(sums);
