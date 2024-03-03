@@ -48,7 +48,8 @@ impl RssManager {
 
     fn update_rss(&mut self) {
         let mut new_rss = Vec::new();
-        self.channel.set_last_build_date(Some(Utc::now().to_rfc3339()));
+        self.channel
+            .set_last_build_date(Some(Utc::now().to_rfc3339()));
         if let Err(e) = self.channel.write_to(&mut new_rss) {
             error!("Failed to generate RSS doc! Got error: {e}");
         }
