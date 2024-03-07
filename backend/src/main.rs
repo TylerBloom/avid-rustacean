@@ -14,7 +14,7 @@
 )]
 
 /// The address of the server, used for the RSS feed.
-pub static SERVER_ADDRESS: &str = "https://avid-rustacean.shuttle.rs";
+pub static SERVER_ADDRESS: &str = "https://avid-rustacean.shuttleapp.rs";
 
 use std::sync::OnceLock;
 

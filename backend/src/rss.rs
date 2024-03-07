@@ -36,7 +36,7 @@ impl RssManager {
     pub fn new() -> Self {
         let channel = ChannelBuilder::default()
             .title("The Avid Rustacean")
-            .link("https://avid-rustacean.shuttleapp.rs/")
+            .link(SERVER_ADDRESS)
             .description("Content from the Avid Rustacean, including Rust from First Principles")
             .generator(Some("https://github.com/TylerBloom/avid-rustacean".into()))
             .build();
@@ -60,9 +60,7 @@ impl RssManager {
     }
 
     pub fn load<'a>(&'a mut self, posts: impl Iterator<Item = &'a Post>) {
-        for post in posts {
-            self.add_post(post);
-        }
+        posts.for_each(|p| self.add_post(p));
         self.update_rss();
     }
 
@@ -70,7 +68,7 @@ impl RssManager {
         let mut builder = ItemBuilder::default();
         let link = format!(
             "{SERVER_ADDRESS}/blog/{}",
-            url_escape::encode_path(&post.summary.title)
+            post.summary.title.replace(' ', "-")
         );
         let guid = Guid {
             value: link.clone(),
