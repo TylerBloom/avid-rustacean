@@ -9,6 +9,7 @@ pub struct HomePage {
 }
 
 impl HomePage {
+    #[cfg(feature = "server")]
     pub fn new(md: &str) -> Option<Self> {
         md.parse().ok().map(|body| Self { body })
     }
