@@ -1,101 +1,79 @@
-/*
-<title>Without boats, dreams dry up</title>
-<link>https://without.boats/</link>
-<description>Recent content on Without boats, dreams dry up</description>
-<generator>Hugo -- gohugo.io</generator>
-<lastBuildDate>Sat, 24 Feb 2024 00:00:00 +0000</lastBuildDate>
-<atom:link href="https://without.boats/index.xml" rel="self" type="application/rss+xml"/>
-*/
-
-use std::{fmt::Write, sync::Arc};
+use std::fmt::Write;
 
 use avid_rustacean_model::{MdNode, Post};
 use axum::{extract::State, response::Response};
 use chrono::Utc;
 use http::header::CONTENT_TYPE;
-use rss::{Channel, ChannelBuilder, Guid, ItemBuilder};
-use tracing::error;
+use rss::{ChannelBuilder, Guid, Item, ItemBuilder};
 
 use crate::{state::AppState, SERVER_ADDRESS};
 
 pub async fn get_rss(State(state): State<AppState>) -> Response {
-    let body = String::from(&*state.rss.read().unwrap().get_feed());
     Response::builder()
         .header(CONTENT_TYPE, "application/xml")
-        .body(body.into())
+        .body(state.rss.get_feed().into())
         .unwrap()
 }
 
 #[derive(Debug, Clone)]
 pub struct RssManager {
-    channel: Channel,
-    rss: Arc<str>,
+    rss: &'static str,
+}
+
+fn post_to_item(post: &Post) -> Item {
+    let mut builder = ItemBuilder::default();
+    let link = format!(
+        "{SERVER_ADDRESS}/blog/{}",
+        post.summary.title.replace(' ', "-")
+    );
+    let guid = Guid {
+        value: link.clone(),
+        permalink: true,
+    };
+    builder
+        .title(Some(post.summary.title.clone()))
+        .guid(Some(guid))
+        .link(Some(link))
+        .pub_date(Some(post.summary.create_on.to_string()));
+    let mut body = String::new();
+    let mut header_count = 0;
+    for section in post.body.0.iter() {
+        header_count += matches!(section, MdNode::Heading(_)) as u8;
+        if header_count >= 3 {
+            break;
+        } else {
+            let _ = markdown_to_html(section, &mut body);
+        }
+    }
+    builder.description(Some(body));
+    builder.build()
 }
 
 impl RssManager {
-    pub fn new() -> Self {
-        let channel = ChannelBuilder::default()
+    pub fn new<'a>(posts: impl Iterator<Item = &'a Post>) -> Self {
+        let mut channel = ChannelBuilder::default()
             .title("The Avid Rustacean")
             .link(SERVER_ADDRESS)
             .description("Content from the Avid Rustacean, including Rust from First Principles")
             .generator(Some("https://github.com/TylerBloom/avid-rustacean".into()))
             .build();
-        Self {
-            channel,
-            rss: Arc::from(""),
-        }
-    }
 
-    fn update_rss(&mut self) {
-        let mut new_rss = Vec::new();
-        self.channel
-            .set_last_build_date(Some(Utc::now().to_rfc3339()));
-        if let Err(e) = self.channel.write_to(&mut new_rss) {
-            error!("Failed to generate RSS doc! Got error: {e}");
-        }
-        match String::from_utf8(new_rss) {
-            Ok(new_rss) => self.rss = Arc::from(new_rss),
-            Err(e) => error!("RSS doc could not be converted to String! Got error: {e}"),
-        }
-    }
+        channel.items.extend(posts.map(post_to_item));
 
-    pub fn load<'a>(&'a mut self, posts: impl Iterator<Item = &'a Post>) {
-        posts.for_each(|p| self.add_post(p));
-        self.update_rss();
-    }
-
-    pub fn add_post(&mut self, post: &Post) {
-        let mut builder = ItemBuilder::default();
-        let link = format!(
-            "{SERVER_ADDRESS}/blog/{}",
-            post.summary.title.replace(' ', "-")
-        );
-        let guid = Guid {
-            value: link.clone(),
-            permalink: true,
+        let mut rss = Vec::new();
+        channel.set_last_build_date(Some(Utc::now().to_rfc3339()));
+        if let Err(e) = channel.write_to(&mut rss) {
+            panic!("Failed to generate RSS doc! Got error: {e}");
+        }
+        let rss = match String::from_utf8(rss) {
+            Ok(rss) => rss.leak(),
+            Err(e) => panic!("RSS doc could not be converted to String! Got error: {e}"),
         };
-        builder
-            .title(Some(post.summary.title.clone()))
-            .guid(Some(guid))
-            .link(Some(link))
-            .pub_date(Some(post.summary.create_on.to_string()));
-        let mut body = String::new();
-        let mut header_count = 0;
-        for section in post.body.0.iter() {
-            header_count += matches!(section, MdNode::Heading(_)) as u8;
-            if header_count >= 3 {
-                break;
-            } else {
-                let _ = markdown_to_html(section, &mut body);
-            }
-        }
-        builder.description(Some(body));
-        self.channel.items.push(builder.build());
-        self.update_rss();
+        Self { rss }
     }
 
-    pub fn get_feed(&self) -> Arc<str> {
-        self.rss.clone()
+    pub fn get_feed(&self) -> &'static str {
+        self.rss
     }
 }
 
@@ -138,10 +116,4 @@ fn markdown_to_html(node: &MdNode, html: &mut String) -> Result<(), std::fmt::Er
         MdNode::InlineCode(text) => write!(html, "<code>{text}</code>")?,
     }
     Ok(())
-}
-
-impl Default for RssManager {
-    fn default() -> Self {
-        Self::new()
-    }
 }
