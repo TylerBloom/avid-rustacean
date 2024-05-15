@@ -36,7 +36,6 @@ pub mod state;
 use home::*;
 use posts::*;
 use projects::*;
-use shuttle_secrets::SecretStore;
 use state::AppState;
 use tower_http::cors::CorsLayer;
 
@@ -62,20 +61,7 @@ async fn badge_api() -> Json<Badge> {
 }
 
 #[shuttle_runtime::main]
-async fn axum(
-    #[shuttle_shared_db::MongoDb] db_conn: Database,
-    #[shuttle_secrets::Secrets] _secret_store: SecretStore,
-) -> shuttle_axum::ShuttleAxum {
-    /*
-    API_KEY
-        .set(
-            secret_store
-                .get("API_KEY")
-                .expect("API_KEY not found in secrets!!"),
-        )
-        .unwrap();
-    */
-
+async fn axum(#[shuttle_shared_db::MongoDb] db_conn: Database) -> shuttle_axum::ShuttleAxum {
     let state = AppState::new(db_conn);
     state.load().await;
 
