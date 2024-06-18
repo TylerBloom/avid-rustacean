@@ -17,7 +17,7 @@ webatui = { version = "0.1" }
 ratatui = { version = "0.25", default-features = false, features = ["all-widgets", "unstable-rendered-line-info"] }
 yew = { version = "0.21", features = ["csr"] }
 yew-router = { version = "0.18" }
-derive_more = "0.99.17"
+derive_more = "0.99.18"
 url-escape = "0.1.1"
 serde = { version = "1.0.203", features = ["derive"] }
 gloo-net = { version = "0.5", features = ["json", "http"] }
