@@ -70,7 +70,7 @@ dependencies = [
  "base16-palettes",
  "derive_more",
  "gloo-net 0.5.0",
- "implicit-clone",
+ "implicit-clone 0.5.0",
  "ratatui",
  "serde",
  "url-escape",
@@ -798,6 +798,15 @@ checksum = "f8a9aa791c7b5a71b636b7a68207fdebf171ddfc593d9c8506ec4cbc527b6a84"
 dependencies = [
  "implicit-clone-derive",
  "indexmap",
+]
+
+[[package]]
+name = "implicit-clone"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1bd41bf647018e1da0e32dac34d02135d61d7204cee650e4633eddbd0b23ec38"
+dependencies = [
+ "implicit-clone-derive",
 ]
 
 [[package]]
@@ -1595,7 +1604,7 @@ dependencies = [
  "console_error_panic_hook",
  "futures",
  "gloo 0.10.0",
- "implicit-clone",
+ "implicit-clone 0.4.9",
  "indexmap",
  "js-sys",
  "prokio",

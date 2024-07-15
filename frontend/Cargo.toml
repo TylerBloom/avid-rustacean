@@ -21,5 +21,5 @@ derive_more = "0.99.18"
 url-escape = "0.1.1"
 serde = { version = "1.0.204", features = ["derive"] }
 gloo-net = { version = "0.5", features = ["json", "http"] }
-implicit-clone = "=0.4.9"
+implicit-clone = "=0.5.0"
 base16-palettes = { version = "0.1.0", features = ["gruvbox"] }
