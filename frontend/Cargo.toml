@@ -17,9 +17,10 @@ webatui = { version = "0.1" }
 ratatui = { version = "=0.25", default-features = false, features = ["all-widgets", "unstable-rendered-line-info"] }
 yew = { version = "0.21", features = ["csr"] }
 yew-router = { version = "0.18" }
-derive_more = "0.99.18"
+# TODO: This does not need to be full.
+derive_more = { version = "1.0", features = ["full"] }
 url-escape = "0.1.1"
 serde = { version = "1.0.204", features = ["derive"] }
-gloo-net = { version = "0.5", features = ["json", "http"] }
-implicit-clone = "=0.4.9"
+gloo-net = { version = "0.6", features = ["json", "http"] }
+implicit-clone = "0.5"
 base16-palettes = { version = "0.1.0", features = ["gruvbox"] }

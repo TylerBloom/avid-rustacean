@@ -6,9 +6,9 @@ edition = "2021"
 [dependencies]
 avid-rustacean-model = { path = "../model", features = ["server"] }
 axum = { version = "0.7", features = ["macros"] }
-shuttle-runtime = { version = "0.46.0" }
-shuttle-axum = { version = "0.46.0" }
-tokio = { version = "1.38", features = ["sync"] }
+shuttle-runtime = { version = "0.47.0" }
+shuttle-axum = { version = "0.47.0" }
+tokio = { version = "1.39", features = ["sync"] }
 serde = { version = "1.0", features = ["rc", "derive"] }
 serde_json = { version = "1.0" }
 futures = "0.3"
