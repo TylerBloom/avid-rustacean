@@ -54,7 +54,7 @@ impl TryFrom<&Node> for MdNode {
             Node::ThematicBreak(_) => Ok(Self::ThematicBreak),
             Node::Break(_) => Ok(Self::Break),
             Node::Heading(h) => Ok(Self::Heading(nodes_to_string(&h.children))),
-            Node::BlockQuote(b) => Ok(Self::BlockQuote(nodes_to_string(&b.children))),
+            Node::Blockquote(b) => Ok(Self::BlockQuote(nodes_to_string(&b.children))),
             Node::InlineCode(c) => Ok(Self::InlineCode(c.value.clone())),
             Node::Emphasis(e) => Ok(Self::Emphasis(nodes_to_string(&e.children))),
             Node::Strong(s) => Ok(Self::Strong(nodes_to_string(&s.children))),
