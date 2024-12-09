@@ -13,7 +13,7 @@ serde = { version = "1.0", features = ["rc", "derive"] }
 serde_json = { version = "1.0" }
 futures = "0.3"
 troupe = "0.1.0"
-tower-http = { version = "0.5", features = ["cors"] }
+tower-http = { version = "0.6", features = ["cors"] }
 http = { version = "1.0" }
 tracing = "0.1.40"
 chrono = { version = "0.4", features = ["serde"] }
