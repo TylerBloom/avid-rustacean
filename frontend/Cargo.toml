@@ -20,7 +20,7 @@ yew-router = { version = "0.18" }
 # TODO: This does not need to be full.
 derive_more = { version = "1.0", features = ["full"] }
 url-escape = "0.1.1"
-serde = { version = "1.0.204", features = ["derive"] }
+serde = { version = "1.0.217", features = ["derive"] }
 gloo-net = { version = "0.6", features = ["json", "http"] }
 implicit-clone = "0.5"
 base16-palettes = { version = "0.1.0", features = ["gruvbox"] }
