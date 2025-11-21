@@ -30,10 +30,11 @@ pub enum HomeMessage {
 impl Home {
     pub fn setup(&self, ctx: &Context<WebTerminal<TermApp>>) {
         ctx.link().send_future(async move {
-            let home = match Request::get("/api/v1/home").send().await {
+            let home = match Request::get("/tui/home.json").send().await {
                 Ok(resp) => resp.json().await.unwrap_or_default(),
                 Err(_) => HomePage::default(),
             };
+            web_sys::console::log_1(&format!("{home:?}").into());
             WebTermMessage::new(ComponentMsg::Home(HomeMessage::Data(home)))
         });
     }

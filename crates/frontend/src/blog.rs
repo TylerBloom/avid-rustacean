@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use avid_rustacean_model::{Project, ProjectSummary};
+use avid_rustacean_model::PostSummary;
 use gloo_net::http::Request;
 use ratatui::{prelude::*, widgets::*};
 use webatui::prelude::*;
@@ -10,122 +10,79 @@ use yew_router::prelude::*;
 use crate::{
     app::{AppBodyProps, TermApp},
     palette::{GruvboxColor, GruvboxExt},
-    utils::{padded_title, render_markdown, Markdown, MdLine, ScrollRef},
+    utils::{padded_title, render_markdown, MdLine, ScrollRef},
     Route,
 };
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct AllProjects {
-    projects: Vec<(ProjectSummary, Vec<Line<'static>>)>,
-    names: HashSet<String>,
+pub struct Blog {
+    summaries: Vec<(PostSummary, Vec<Line<'static>>)>,
+    titles: HashSet<String>,
     links: HashMap<String, String>,
-}
-
-#[derive(Debug)]
-pub enum AllProjectsMessage {
-    ProjectSummaries(Vec<ProjectSummary>),
-    Clicked(String),
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub struct ProjectView {
-    title: String,
-    body: Markdown,
     scroll: u16,
 }
 
-#[derive(Debug, PartialEq)]
-pub enum ProjectMessage {
-    Body(Project),
+#[derive(Debug)]
+pub enum BlogMessage {
+    PostSummaries(Vec<PostSummary>),
+    Clicked(String),
 }
 
-impl ProjectView {
-    pub fn setup(&self, ctx: &Context<WebTerminal<TermApp>>) {
-        let cp_title = self.title.clone();
-        ctx.link().send_future(async move {
-            let body = match Request::get(&format!("/api/v1/projects/{cp_title}"))
-                .send()
-                .await
-            {
-                Ok(resp) => resp.json().await.unwrap_or_default(),
-                Err(_) => Project::default(),
-            };
-            WebTermMessage::new(ProjectMessage::Body(body))
-        });
-    }
-
-    pub fn create(title: String) -> Self {
-        Self {
-            title,
-            body: Markdown::default(),
-            scroll: 0,
-        }
-    }
-
-    pub fn selected(&self) -> Option<usize> {
-        None
-    }
-
-    pub fn hydrate(&self, ctx: &Context<WebTerminal<TermApp>>, span: &mut DehydratedSpan) {
-        self.body.hydrate(ctx, span)
-    }
-
-    pub fn handle_scroll(&mut self, _dir: ScrollMotion) {}
-
-    pub fn update(&mut self, msg: ProjectMessage) {
-        match msg {
-            ProjectMessage::Body(body) => {
-                self.body = Markdown::new(body.summary.name.clone(), body.body);
-            }
-        }
-    }
-
-    pub fn draw(&self, scroll: &ScrollRef, rect: Rect, frame: &mut Frame<'_>) {
-        self.body.draw(scroll, rect, frame)
-    }
-}
-
-impl AllProjects {
+impl Blog {
     pub fn setup(&self, ctx: &Context<WebTerminal<TermApp>>) {
         ctx.link().send_future(async move {
-            let projects = match Request::get("/api/v1/projects").send().await {
+            let summaries = match Request::get("/tui/posts.json").send().await {
                 Ok(resp) => resp.json().await.unwrap_or_default(),
                 Err(_) => Vec::new(),
             };
-            WebTermMessage::new(AllProjectsMessage::ProjectSummaries(projects))
+            WebTermMessage::new(BlogMessage::PostSummaries(summaries))
         });
     }
 
     pub fn create() -> Self {
         Self {
-            projects: Vec::new(),
-            names: HashSet::new(),
+            scroll: 0,
+            summaries: Vec::new(),
             links: HashMap::new(),
+            titles: HashSet::new(),
         }
     }
 
     pub fn hydrate(&self, ctx: &Context<WebTerminal<TermApp>>, span: &mut DehydratedSpan) {
         if let Some(link) = self.links.get(span.text()) {
-            span.hyperlink(link.clone());
-        } else if self.names.contains(span.text()) {
-            let name = span.text().to_owned();
+            span.hyperlink(link.clone())
+        } else if self.titles.contains(span.text()) {
+            let title = span.text().to_owned();
+            let real_name = self
+                .summaries
+                .iter()
+                .find(|(summary, _)| summary.title == title)
+                .unwrap()
+                .0
+                .real_name
+                .clone();
             span.on_click(
-                ctx.link().callback(move |_| {
-                    WebTermMessage::new(AllProjectsMessage::Clicked(name.clone()))
-                }),
+                ctx.link()
+                    .callback(move |_| WebTermMessage::new(BlogMessage::Clicked(real_name.clone()))),
             );
         }
     }
 
-    pub fn handle_scroll(&mut self, _dir: ScrollMotion) {}
+    pub fn handle_scroll(&mut self, dir: ScrollMotion) {
+        match dir {
+            ScrollMotion::Up => self.scroll = self.scroll.saturating_add(1),
+            ScrollMotion::Down => self.scroll = self.scroll.saturating_sub(1),
+        }
+    }
 
-    pub fn update(&mut self, ctx: TermContext<'_, TermApp>, msg: AllProjectsMessage) {
+    pub fn update(&mut self, ctx: TermContext<'_, TermApp>, msg: BlogMessage) {
         match msg {
-            AllProjectsMessage::ProjectSummaries(projects) => {
-                self.projects = projects
+            BlogMessage::PostSummaries(summaries) => {
+                self.summaries = summaries
                     .into_iter()
+                    .rev()
                     .map(|s| {
-                        self.names.insert(s.name.clone());
+                        self.titles.insert(s.title.clone());
                         let lines = render_markdown(s.summary.clone(), &mut self.links)
                             .into_iter()
                             .filter_map(|l| match l {
@@ -136,23 +93,23 @@ impl AllProjects {
                     })
                     .collect();
             }
-            AllProjectsMessage::Clicked(name) => {
+            BlogMessage::Clicked(name) => {
                 let name = name.replace(' ', "-");
                 ctx.ctx()
                     .link()
-                    .send_message(WebTermMessage::new(AppBodyProps::Project(name.clone())));
+                    .send_message(WebTermMessage::new(AppBodyProps::Post(name.clone())));
                 ctx.ctx()
                     .link()
                     .navigator()
                     .unwrap()
-                    .push(&Route::Project { name });
+                    .push(&Route::Post { name });
             }
         }
     }
 
     pub fn draw(&self, scroll: &ScrollRef, rect: Rect, frame: &mut Frame<'_>) {
         let width = rect.width.saturating_sub(6) as usize;
-        let mut lines = Vec::with_capacity(5 * self.projects.len() + 1);
+        let mut lines = Vec::with_capacity(5 * self.summaries.len() + 1);
         lines.push(
             Line::styled(
                 "─".repeat(width),
@@ -160,16 +117,20 @@ impl AllProjects {
             )
             .alignment(Alignment::Center),
         );
-        for (summary, md) in &self.projects {
+        for (summary, md) in &self.summaries {
             lines.push(
                 Line::styled(
-                    summary.name.clone(),
+                    summary.title.clone(),
                     GruvboxColor::teal()
                         .fg_style()
                         .to_hydrate()
                         .add_modifier(Modifier::BOLD | Modifier::UNDERLINED),
                 )
                 .alignment(Alignment::Center),
+            );
+            lines.push(
+                Line::raw(format!("Published on: {}", summary.create_on))
+                    .alignment(Alignment::Right),
             );
             lines.extend(md.iter().cloned());
             lines.push(Line::raw("═".repeat(width)).alignment(Alignment::Center));
@@ -188,7 +149,7 @@ impl AllProjects {
             .block(
                 Block::new()
                     .title(padded_title(
-                        "Projects".into(),
+                        "Blog".into(),
                         GruvboxColor::green().full_style(GruvboxColor::dark_4()),
                     ))
                     .borders(Borders::ALL),

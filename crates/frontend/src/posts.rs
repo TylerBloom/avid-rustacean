@@ -12,6 +12,7 @@ use crate::{
 #[derive(Debug, PartialEq, Clone)]
 pub struct Post {
     title: String,
+    real_name: String,
     body: Markdown,
     scroll: u16,
 }
@@ -28,9 +29,9 @@ pub struct PostData {
 
 impl Post {
     pub fn setup(&self, ctx: &Context<WebTerminal<TermApp>>) {
-        let cp_name = self.title.clone().replace(' ', "-");
+        let cp_name = self.real_name.clone().replace(' ', "-");
         ctx.link().send_future(async move {
-            let post = match Request::get(&format!("/api/v1/posts/{cp_name}"))
+            let post = match Request::get(&format!("/tui/posts/{cp_name}.json"))
                 .send()
                 .await
             {
@@ -45,9 +46,10 @@ impl Post {
         let mut real_name = String::with_capacity(name.len());
         url_escape::decode_to_string(name, &mut real_name);
         Self {
-            title: real_name,
+            title: String::new(),
             body: Markdown::default(),
             scroll: 0,
+            real_name,
         }
     }
 
@@ -69,6 +71,7 @@ impl Post {
     pub fn update(&mut self, msg: PostMessage) {
         match msg {
             PostMessage::Post(post) => {
+                self.title = post.summary.title.clone();
                 self.body = Markdown::new(post.summary.title.clone(), post.body);
             }
         }

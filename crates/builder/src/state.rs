@@ -1,10 +1,8 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, path::PathBuf};
 
 use avid_rustacean_model::*;
 use chrono::DateTime;
 use serde::Deserialize;
-
-use crate::rss::RssManager;
 
 /// A struct used to store post data in files. This is used to store a post's data in a TOML file
 /// so that it can be diff by git. The AppState uses this model as its source of truth on start up.
@@ -44,7 +42,6 @@ impl FileData {
 
 #[derive(Debug, Clone)]
 pub struct AppState {
-    pub rss: RssManager,
     pub home: &'static HomePage,
     posts: HashMap<String, &'static Post>,
     pub post_sums: &'static [PostSummary],
@@ -54,49 +51,64 @@ pub struct AppState {
 
 impl AppState {
     pub fn new() -> Self {
-        // TODO: Remove the load method and parse everything here
+        // Collect markdown docs
+        let mut assets_path: PathBuf = env!("CARGO_MANIFEST_DIR").parse().unwrap();
+        assets_path.pop();
+        assets_path.push("assets");
+        let mut md_assets: HashMap<String, String> = std::fs::read_dir(&assets_path)
+            .unwrap()
+            .map(Result::unwrap)
+            .filter_map(|file| {
+                let name = file
+                    .path()
+                    .file_name()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_string();
+                name.ends_with(".md").then(|| {
+                    let data = std::fs::read_to_string(file.path()).unwrap();
+                    (name, data)
+                })
+            })
+            .collect();
+        md_assets.remove("_index.md");
+
         // Home page
-        let home = Box::leak(Box::new(
-            HomePage::new(include_str!("../../content/home.md")).unwrap(),
-        ));
+        let data = md_assets.remove("home.md").unwrap();
+        let (_, md) = split_markdown(&data);
+        let home = HomePage {
+            body: md.parse().unwrap(),
+        };
+
+        // Projects page
+        let data = md_assets.remove("projects.md").unwrap();
+        let (_, md) = split_markdown(&data);
+        let projects: Markdown = md.parse().unwrap();
 
         // Blog
-        let file_posts: HashMap<String, FileData> =
-            toml::from_str(include_str!("../../content/posts.toml")).unwrap();
+        let mut posts = HashMap::new();
 
-        let posts: HashMap<_, _> = file_posts
-            .into_iter()
-            .map(|(name, post)| (name, &*Box::leak::<'static>(Box::new(post.into_post()))))
-            .collect();
-        let mut sums = posts
-            .values()
-            .map(|p| p.summary.clone())
-            .collect::<Vec<_>>();
-        sums.sort_by(|a, b| a.create_on.cmp(&b.create_on));
-        let post_sums = sums.leak();
-
-        // Projects
-        let file_projects: HashMap<String, FileData> =
-            toml::from_str(include_str!("../../content/projects.toml")).unwrap();
-        let projects: HashMap<_, _> = file_projects
-            .into_iter()
-            .map(|(name, proj)| (name, &*Box::leak::<'static>(Box::new(proj.into_project()))))
-            .collect();
-        let proj_sums = projects
-            .values()
-            .map(|p| p.summary.clone())
-            .collect::<Vec<_>>()
-            .leak();
-
-        let rss = RssManager::new(posts.values().copied());
-        Self {
-            home,
-            posts,
-            projects,
-            post_sums,
-            proj_sums,
-            rss,
+        for (path, data) in md_assets {
+            let path = path.replace(".md", ".json");
+            let (metadata, md) = split_markdown(&data);
+            let PostMetadata {
+                title,
+                date,
+                description,
+            } = toml::from_str(&metadata).unwrap();
+            let post = Post {
+                summary: PostSummary {
+                    title,
+                    summary: description.parse().unwrap(),
+                    create_on: date,
+                    last_edit: None,
+                },
+                body: md.parse().unwrap(),
+            };
+            posts.insert(path, post);
         }
+        todo!()
     }
 
     /// Attempts to retrieve a post from the app state.

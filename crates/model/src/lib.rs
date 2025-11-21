@@ -14,6 +14,7 @@
 )]
 
 pub use chrono::Utc;
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 
 mod home;
@@ -23,6 +24,24 @@ mod project;
 pub use home::*;
 pub use post::*;
 pub use project::*;
+
+pub fn split_markdown(file: &str) -> (String, String) {
+    let mut lines = file.lines();
+
+    // This should be the start of the metadata
+    assert_eq!(lines.next(), Some("+++"));
+
+    // The metadata is everything between the two lines that only contain '+++'
+    let metadata = lines
+        .by_ref()
+        .take_while(|line| *line != "+++")
+        .format("\n")
+        .to_string();
+
+    // Everything else should be markdown
+    let md = lines.format("\n").to_string();
+    (metadata, md)
+}
 
 /// The parsed representation of markdown pages. The parsing occurs on the backend when it receives
 /// a new project, blog post, or any updates to existing pages. Colorizing the markdown is task of

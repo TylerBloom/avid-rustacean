@@ -41,15 +41,13 @@ pub mod utils;
 
 #[derive(Debug, Clone, Routable, PartialEq)]
 enum Route {
-    #[at("/")]
+    #[at("/tui/")]
     Home,
-    #[at("/projects")]
+    #[at("/tui/projects")]
     AllProjects,
-    #[at("/projects/:name")]
-    Project { name: String },
-    #[at("/blog")]
+    #[at("/tui/blog")]
     Blog,
-    #[at("/blog/:name")]
+    #[at("/tui/blog/:name")]
     Post { name: String },
 }
 
@@ -57,7 +55,6 @@ fn switch(route: Route) -> Html {
     let body = match route {
         Route::Home => AppBodyProps::Home,
         Route::AllProjects => AppBodyProps::AllProjects,
-        Route::Project { name } => AppBodyProps::Project(name),
         Route::Blog => AppBodyProps::Blog,
         Route::Post { name } => AppBodyProps::Post(name),
     };

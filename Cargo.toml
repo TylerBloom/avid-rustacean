@@ -1,5 +1,5 @@
 [workspace]
-members = ["backend", "model"]
+members = ["crates/builder", "crates/model"]
 
 resolver = "2"
 
@@ -7,7 +7,7 @@ resolver = "2"
 # of the backend. Otherwise, there is a deadlock. This doesn't impose any real
 # cost since the frontend is always compiled to WASM, so it doesn't share any
 # deps with the backend.
-exclude = ["frontend"]
+exclude = ["crates/frontend"]
 
 [profile.release]
 lto = true

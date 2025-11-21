@@ -24,3 +24,5 @@ serde = { version = "1.0.204", features = ["derive"] }
 gloo-net = { version = "0.6", features = ["json", "http"] }
 implicit-clone = "0.5"
 base16-palettes = { version = "0.1.0", features = ["gruvbox"] }
+web-sys = "0.3.82"
+futures = "0.3.31"

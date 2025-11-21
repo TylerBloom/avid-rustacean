@@ -1,3 +1,10 @@
++++
+title = "About Me"
+path = "about"
+date = 2023-12-17
+generate_feeds = false
++++
+
 # Introduction
 Hi! I'm Tyler Bloom, and welcome to my blog. I'm a Rust developer, and that's what I'll spend most of my time talking about on here, though I might write about anything. I started writing Rust during my final year of grad school (around Oct. 2021), and I haven't looked back. Since then, nearly all of the code that I write both personally and professional is Rust.
 

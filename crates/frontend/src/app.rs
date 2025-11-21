@@ -9,7 +9,7 @@ use crate::{
     home::{Home, HomeMessage},
     palette::{GruvboxColor, GruvboxExt},
     posts::{Post, PostMessage},
-    project::{AllProjects, AllProjectsMessage, ProjectMessage, ProjectView},
+    project::{AllProjects, AllProjectsMessage},
     utils::{padded_title, ScrollRef},
     Route,
 };
@@ -53,11 +53,6 @@ impl TerminalApp for TermApp {
                         .unwrap()
                         .push(&Route::AllProjects),
                     AppBodyProps::Blog => ctx.ctx().link().navigator().unwrap().push(&Route::Blog),
-                    AppBodyProps::Project(name) => {
-                        ctx.ctx().link().navigator().unwrap().push(&Route::Project {
-                            name: name.to_owned(),
-                        });
-                    }
                     AppBodyProps::Post(name) => {
                         ctx.ctx().link().navigator().unwrap().push(&Route::Post {
                             name: name.to_owned(),
@@ -122,7 +117,6 @@ pub struct AppBody {
 enum AppBodyInner {
     Home(Home),
     AllProjects(AllProjects),
-    Project(ProjectView),
     Blog(Blog),
     Post(Post),
 }
@@ -173,7 +167,6 @@ impl AppBodyInner {
         match self {
             Self::Home(home) => home.draw(scroll, chunk, frame),
             Self::AllProjects(projects) => projects.draw(scroll, chunk, frame),
-            Self::Project(proj) => proj.draw(scroll, chunk, frame),
             Self::Blog(blog) => blog.draw(scroll, chunk, frame),
             Self::Post(post) => post.draw(scroll, chunk, frame),
         }
@@ -183,7 +176,6 @@ impl AppBodyInner {
         match self {
             AppBodyInner::Home(inner) => inner.setup(ctx),
             AppBodyInner::AllProjects(inner) => inner.setup(ctx),
-            AppBodyInner::Project(inner) => inner.setup(ctx),
             AppBodyInner::Blog(inner) => inner.setup(ctx),
             AppBodyInner::Post(inner) => inner.setup(ctx),
         }
@@ -193,7 +185,6 @@ impl AppBodyInner {
         match self {
             Self::Home(home) => home.hydrate(ctx, span),
             Self::AllProjects(projects) => projects.hydrate(ctx, span),
-            Self::Project(proj) => proj.hydrate(ctx, span),
             Self::Blog(blog) => blog.hydrate(ctx, span),
             Self::Post(post) => post.hydrate(ctx, span),
         }
@@ -203,7 +194,6 @@ impl AppBodyInner {
         match (self, msg) {
             (Self::Home(body), ComponentMsg::Home(msg)) => body.update(msg),
             (Self::AllProjects(body), ComponentMsg::AllProjects(msg)) => body.update(ctx, msg),
-            (Self::Project(body), ComponentMsg::Project(msg)) => body.update(msg),
             (Self::Blog(body), ComponentMsg::Blog(msg)) => body.update(ctx, msg),
             (Self::Post(body), ComponentMsg::Post(msg)) => body.update(msg),
             _ => unreachable!("How did you get here? Open a PR, please"),
@@ -215,7 +205,6 @@ impl AppBodyInner {
             Self::Home(home) => home.handle_scroll(dir),
             Self::AllProjects(projects) => projects.handle_scroll(dir),
             Self::Blog(blog) => blog.handle_scroll(dir),
-            Self::Project(proj) => proj.handle_scroll(dir),
             Self::Post(post) => post.handle_scroll(dir),
         }
     }
@@ -226,7 +215,6 @@ impl AppBodyInner {
 pub enum AppBodyProps {
     Home,
     AllProjects,
-    Project(String),
     Blog,
     Post(String),
 }
@@ -236,7 +224,6 @@ impl AppBodyProps {
         let inner = match self {
             AppBodyProps::Home => AppBodyInner::Home(Home::create()),
             AppBodyProps::AllProjects => AppBodyInner::AllProjects(AllProjects::create()),
-            AppBodyProps::Project(name) => AppBodyInner::Project(ProjectView::create(name)),
             AppBodyProps::Blog => AppBodyInner::Blog(Blog::create()),
             AppBodyProps::Post(name) => AppBodyInner::Post(Post::create(name)),
         };
@@ -263,7 +250,6 @@ pub enum ComponentMsg {
     Home(HomeMessage),
     AllProjects(AllProjectsMessage),
     Blog(BlogMessage),
-    Project(ProjectMessage),
     Post(PostMessage),
 }
 
@@ -337,12 +323,6 @@ impl From<AllProjectsMessage> for TermAppMsg {
 impl From<BlogMessage> for TermAppMsg {
     fn from(value: BlogMessage) -> Self {
         Self::ComponentMsg(ComponentMsg::Blog(value))
-    }
-}
-
-impl From<ProjectMessage> for TermAppMsg {
-    fn from(value: ProjectMessage) -> Self {
-        Self::ComponentMsg(ComponentMsg::Project(value))
     }
 }
 

@@ -9,6 +9,7 @@ server = ["markdown", "syntect"]
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 chrono = { version = "0.4", features = ["serde"] }
+itertools = "0.14.0"
 
 # Server-only
 markdown = { version = "1.0.0-alpha.18", optional = true }

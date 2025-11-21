@@ -23,7 +23,8 @@ pub struct Post {
 #[derive(Debug, PartialEq, Eq, Hash, Serialize, Deserialize, Clone, Default)]
 pub struct PostSummary {
     pub title: String,
+    pub real_name: String,
     pub summary: Markdown,
-    pub create_on: DateTime<Utc>,
+    pub create_on: String,
     pub last_edit: Option<DateTime<Utc>>,
 }

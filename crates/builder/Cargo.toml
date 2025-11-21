@@ -5,20 +5,9 @@ edition = "2021"
 
 [dependencies]
 avid-rustacean-model = { path = "../model", features = ["server"] }
-axum = { version = "0.7", features = ["macros"] }
-shuttle-runtime = { version = "0.49.0" }
-shuttle-axum = { version = "0.49.0" }
-tokio = { version = "1.39", features = ["sync"] }
 serde = { version = "1.0", features = ["rc", "derive"] }
 serde_json = { version = "1.0" }
 futures = "0.3"
-troupe = "0.1.0"
-tower-http = { version = "0.5", features = ["cors"] }
-http = { version = "1.0" }
 tracing = "0.1.40"
 chrono = { version = "0.4", features = ["serde"] }
 toml = { version = "0.8.14", features = ["parse"] }
-rss = "2.0.7"
-
-[build-dependencies]
-flate2 = "1.0"
