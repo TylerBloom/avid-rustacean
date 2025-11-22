@@ -41,7 +41,7 @@ jobs:
       - run: cargo build --all --verbose
       - run: cargo test --package avid-rustacean-model --verbose
       - run: cargo test --package avid-rustacean-builder --verbose
-      - run: trunk build frontend/index.html
+      - run: trunk build crates/frontend/index.html
   deployment:
     if: github.event_name == 'push'
     needs: tests
