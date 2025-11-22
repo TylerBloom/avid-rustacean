@@ -1,0 +1,6 @@
+[submodule "themes/terminus"]
+	path = themes/terminus
+	url = https://github.com/ebkalderon/terminus.git
+[submodule "themes/terminimal"]
+	path = themes/terminimal
+	url = https://github.com/pawroman/zola-theme-terminimal.git
