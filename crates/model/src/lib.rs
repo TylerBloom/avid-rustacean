@@ -19,11 +19,9 @@ use serde::{Deserialize, Serialize};
 
 mod home;
 mod post;
-mod project;
 
 pub use home::*;
 pub use post::*;
-pub use project::*;
 
 pub fn split_markdown(file: &str) -> (String, String) {
     let mut lines = file.lines();

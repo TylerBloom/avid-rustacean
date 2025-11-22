@@ -1,7 +1,5 @@
-use std::{cell::RefCell, cmp::Ordering, rc::Rc};
-
 use webatui::{prelude::*, ScrollMotion};
-use yew::{Component, Context, Properties};
+use yew::{Context, Properties};
 use yew_router::scope_ext::RouterScopeExt;
 
 use crate::{
@@ -15,7 +13,6 @@ use crate::{
 };
 use derive_more::From;
 use ratatui::{prelude::*, widgets::*};
-use yew::prelude::*;
 
 /// This module contains all of the machinery to run the UI app. The UI app is a single page
 /// application consisting of the header, body, and footer. The body is changed when switching
@@ -70,11 +67,7 @@ impl TerminalApp for TermApp {
         self.draw(area, frame);
     }
 
-    fn hydrate(
-        &self,
-        ctx: &Context<WebTerminal<Self>>,
-        span: &mut webatui::backend::DehydratedSpan,
-    ) {
+    fn hydrate(&self, ctx: &Context<WebTerminal<Self>>, span: &mut DehydratedSpan) {
         match span.text().trim() {
             "Home" => span.on_click(
                 ctx.link()

@@ -1,17 +1,14 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap};
 
-use avid_rustacean_model::{Project, ProjectSummary};
 use gloo_net::http::Request;
 use ratatui::{prelude::*, widgets::*};
 use webatui::prelude::*;
 use yew::Context;
-use yew_router::prelude::*;
 
 use crate::{
-    app::{AppBodyProps, TermApp},
+    app::{TermApp},
     palette::{GruvboxColor, GruvboxExt},
-    utils::{padded_title, render_markdown, Markdown, MdLine, ScrollRef},
-    Route,
+    utils::{padded_title, render_markdown, MdLine, ScrollRef},
 };
 
 #[derive(Debug, PartialEq, Clone)]
@@ -44,7 +41,7 @@ impl AllProjects {
         }
     }
 
-    pub fn hydrate(&self, ctx: &Context<WebTerminal<TermApp>>, span: &mut DehydratedSpan) {
+    pub fn hydrate(&self, _ctx: &Context<WebTerminal<TermApp>>, span: &mut DehydratedSpan) {
         if let Some(link) = self.links.get(span.text()) {
             span.hyperlink(link.clone());
         }
@@ -52,7 +49,7 @@ impl AllProjects {
 
     pub fn handle_scroll(&mut self, _dir: ScrollMotion) {}
 
-    pub fn update(&mut self, ctx: TermContext<'_, TermApp>, msg: AllProjectsMessage) {
+    pub fn update(&mut self, _ctx: TermContext<'_, TermApp>, msg: AllProjectsMessage) {
         match msg {
             AllProjectsMessage::ProjectSummaries(projects) => {
                 let projects = render_markdown(projects, &mut self.links)
@@ -68,8 +65,7 @@ impl AllProjects {
     }
 
     pub fn draw(&self, scroll: &ScrollRef, rect: Rect, frame: &mut Frame<'_>) {
-        let width = rect.width.saturating_sub(6) as usize;
-        let mut lines = self.projects.clone();
+        let lines = self.projects.clone();
         let widget = Paragraph::new(lines)
             .alignment(Alignment::Center)
             .wrap(Wrap { trim: true })

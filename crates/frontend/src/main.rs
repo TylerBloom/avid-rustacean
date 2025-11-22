@@ -1,5 +1,5 @@
 #![warn(rust_2018_idioms)]
-#![allow(
+#![deny(
     rustdoc::broken_intra_doc_links,
     unreachable_pub,
     unreachable_patterns,
@@ -13,23 +13,16 @@
     clippy::all
 )]
 
-use std::{
-    fmt::{Debug, Display},
-    ops::{Deref, DerefMut},
-    sync::{Mutex, MutexGuard, OnceLock},
-};
+use std::fmt::Debug;
 
 use app::{AppBodyProps, TermApp};
 use base16_palettes::{
     palettes::{GruvboxDarkHard, GruvboxPalette},
     Palette,
 };
-use ratatui::prelude::*;
 use webatui::{WebTermProps, WebTerminal};
 use yew::{function_component, html, Html};
 use yew_router::prelude::*;
-
-use crate::app::TermAppProps;
 
 pub mod app;
 pub mod blog;

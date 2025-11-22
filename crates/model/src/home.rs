@@ -7,11 +7,3 @@ use crate::Markdown;
 pub struct HomePage {
     pub body: Markdown,
 }
-
-impl HomePage {
-    #[cfg(feature = "server")]
-    pub fn new(md: &str) -> Option<Self> {
-        let (_, md) = crate::split_markdown(md);
-        md.parse().ok().map(|body| Self { body })
-    }
-}
