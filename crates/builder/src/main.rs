@@ -3,7 +3,7 @@
     rustdoc::broken_intra_doc_links,
     unreachable_pub,
     unreachable_patterns,
-    // unused,
+    unused,
     unused_qualifications,
     while_true,
     trivial_casts,
@@ -13,24 +13,20 @@
     clippy::all
 )]
 
-use std::{collections::HashMap, path::PathBuf, sync::OnceLock};
+use std::{collections::HashMap, path::PathBuf};
 
 use avid_rustacean_model::{split_markdown, HomePage, Markdown, Post, PostSummary};
 use toml::Value;
-
-// pub mod home;
-// pub mod posts;
-// pub mod projects;
-// pub mod rss;
-// pub mod state;
-
-pub static API_KEY: OnceLock<String> = OnceLock::new();
 
 fn main() {
     // Path to assets directory
     let mut assets_path: PathBuf = env!("CARGO_MANIFEST_DIR").parse().unwrap();
     assets_path.pop();
     assets_path.push("assets");
+
+    if !assets_path.exists() {
+        std::fs::create_dir(&assets_path).unwrap();
+    }
 
     // Generate badge json
     let json = r#"
@@ -87,23 +83,26 @@ fn main() {
     // Blog
     let mut posts = Vec::new();
     for (path, data) in md_assets {
-        println!("Processing {path}");
         let path = path.replace(".md", ".json");
         let (metadata, md) = split_markdown(&data);
-        println!("{metadata}");
         let value: Value = toml::from_str(&metadata).unwrap();
         let Value::Table(table) = value else { panic!() };
-        let Value::Datetime(created_on) = table.get("date").unwrap() else { panic!() };
+        let Value::Datetime(created_on) = table.get("date").unwrap() else {
+            panic!()
+        };
         let create_on = created_on.to_string();
-        let summary =
-                PostSummary {
-                title: table.get("title").unwrap().to_string().clone(),
-                real_name: path.split_once(".json").unwrap().0.to_string(),
-                summary: table.get("description").unwrap().to_string().parse().unwrap(),
-                create_on,
-                last_edit: None,
-            };
-        println!("{summary:#?}");
+        let summary = PostSummary {
+            title: table.get("title").unwrap().to_string().clone(),
+            real_name: path.split_once(".json").unwrap().0.to_string(),
+            summary: table
+                .get("description")
+                .unwrap()
+                .to_string()
+                .parse()
+                .unwrap(),
+            create_on,
+            last_edit: None,
+        };
         posts.push((*created_on, summary.clone()));
         let post = Post {
             summary,
@@ -113,10 +112,12 @@ fn main() {
         assets_path.push(path);
         std::fs::write(&assets_path, &json).unwrap();
         assets_path.pop();
-        println!();
     }
     posts.sort_by(|prior, next| prior.0.cmp(&next.0));
-    let posts = posts.into_iter().map(|(_, summary)| summary).collect::<Vec<_>>();
+    let posts = posts
+        .into_iter()
+        .map(|(_, summary)| summary)
+        .collect::<Vec<_>>();
     let json = serde_json::to_string(&posts).unwrap();
     assets_path.push("posts.json");
     std::fs::write(&assets_path, &json).unwrap();
