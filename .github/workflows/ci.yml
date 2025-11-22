@@ -20,9 +20,7 @@ jobs:
           rust-version: nightly
           components: rustfmt
       - uses: actions/checkout@v4
-      - run: cargo fmt --check --package avid-rustacean-model
-      - run: cargo fmt --check --manifest-path frontend/Cargo.toml
-      - run: cargo fmt --check --package avid-rustacean-backend
+      - run: cargo fmt --check --all
   tests:
     needs: code_cleaniness_checks
     runs-on: ubuntu-latest
@@ -38,19 +36,23 @@ jobs:
         uses: jetli/trunk-action@v0.5.0
         with:
           version: 'latest'
-      - run: cargo build --package avid-rustacean-model --verbose
-      - run: cargo test --package avid-rustacean-model --verbose
       - run: wget -qO- https://github.com/thedodd/trunk/releases/download/v0.16.0/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
       - run: pwd >> $GITHUB_PATH
-      - run: cargo build --manifest-path frontend/Cargo.toml --verbose
+      - run: cargo build --all --verbose
+      - run: cargo test --package avid-rustacean-model --verbose
+      - run: cargo test --package avid-rustacean-builder --verbose
       - run: trunk build frontend/index.html
-      - run: cargo build --package avid-rustacean-backend --verbose
-      - run: cargo test --package avid-rustacean-backend --verbose
   deployment:
     if: github.event_name == 'push'
     needs: tests
     runs-on: ubuntu-latest
+    name: shalzz/zola-deploy-action
     steps:
-      - uses: shuttle-hq/deploy-action@main
-        with:
-          deploy-key: ${{ secrets.SHUTTLE_API_KEY }}
+    - uses: actions/checkout@master
+    - run: scripts/compile_tui.sh
+    - name: shalzz/zola-deploy-action
+      uses: shalzz/zola-deploy-action@master
+      env:
+        BUILD_DIR: TylerBloom.github.io
+        PAGES_BRANCH: main
+        GITHUB_TOKEN: ${{ secrets.PAGES_KEY }}

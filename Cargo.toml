@@ -1,13 +1,7 @@
 [workspace]
-members = ["crates/builder", "crates/model"]
+members = ["crates/builder", "crates/model", "crates/frontend"]
 
 resolver = "2"
-
-# We exclude the frontend so that we can compile it as part of the compilation
-# of the backend. Otherwise, there is a deadlock. This doesn't impose any real
-# cost since the frontend is always compiled to WASM, so it doesn't share any
-# deps with the backend.
-exclude = ["crates/frontend"]
 
 [profile.release]
 lto = true

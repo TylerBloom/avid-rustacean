@@ -1,5 +1,5 @@
 [package]
-name = "avid-rustacean-backend"
+name = "avid-rustacean-builder"
 version = "0.2.0"
 edition = "2021"
 
