@@ -1,4 +1,4 @@
-use std::collections::{HashMap};
+use std::collections::HashMap;
 
 use gloo_net::http::Request;
 use ratatui::{prelude::*, widgets::*};
@@ -6,7 +6,7 @@ use webatui::prelude::*;
 use yew::Context;
 
 use crate::{
-    app::{TermApp},
+    app::TermApp,
     palette::{GruvboxColor, GruvboxExt},
     utils::{padded_title, render_markdown, MdLine, ScrollRef},
 };

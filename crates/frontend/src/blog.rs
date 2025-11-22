@@ -62,8 +62,9 @@ impl Blog {
                 .real_name
                 .clone();
             span.on_click(
-                ctx.link()
-                    .callback(move |_| WebTermMessage::new(BlogMessage::Clicked(real_name.clone()))),
+                ctx.link().callback(move |_| {
+                    WebTermMessage::new(BlogMessage::Clicked(real_name.clone()))
+                }),
             );
         }
     }
