@@ -81,7 +81,7 @@ impl TerminalApp for TermApp {
                 ctx.link()
                     .callback(|_| WebTermMessage::new(AppBodyProps::Blog)),
             ),
-            "GUI" => span.hyperlink("https://www.avid-rustacean.dev/".to_owned()),
+            "GUI" => span.hyperlink("https://avid-rustacean.dev/".to_owned()),
             "Repo" => span.hyperlink("https://github.com/TylerBloom/avid-rustacean".to_owned()),
             "Email" => span.hyperlink("mailto:tylerbloom2222@gmail.com".to_owned()),
             "RSS" => span.hyperlink("rss.xml".to_owned()),
