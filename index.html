@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>The Avid Rustacean</title>
+    
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    <meta name="robots" content="noodp"/>
+
+    <link rel="stylesheet" href="https://avid-rustacean.dev/style.css">
+    <link rel="stylesheet" href="https://avid-rustacean.dev/color/orange.css">
+
+        <link rel="stylesheet" href="https://avid-rustacean.dev/color/background_blue.css">
+    
+    <link rel="stylesheet" href="https://avid-rustacean.dev/font-hack-subset.css">
+
+    <meta name="description" content="Tyler's Blog">
+
+    <meta property="og:description" content="Tyler's Blog">
+    <meta property="og:title" content="The Avid Rustacean">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://avid-rustacean.dev/">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:description" content="Tyler's Blog">
+    <meta name="twitter:title" content="The Avid Rustacean">
+    <meta property="twitter:domain" content="avid-rustacean.dev">
+    <meta property="twitter:url" content="https://avid-rustacean.dev/">
+
+                <link rel="alternate" type="application/rss+xml" title="The Avid Rustacean RSS Feed" href="https://avid-rustacean.dev/rss.xml" />
+    </head>
+
+<body class="">
+<div class="container">
+    
+    <header class="header">
+        <div class="header__inner">
+            <div class="header__logo">
+                    
+                <a href="https://avid-rustacean.dev" style="text-decoration: none;">
+                    <div class="logo">
+                      
+                            avid-rustacean.dev
+                        
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        
+        
+                <nav class="menu">
+            <ul class="menu__inner">
+                <li><a href="https://avid-rustacean.dev/tui">TUI</a></li>
+            
+                <li><a href="https://avid-rustacean.dev/about">About</a></li>
+            
+                <li class="active"><a href="https://avid-rustacean.dev">Blog</a></li>
+            
+                <li><a href="https://avid-rustacean.dev/tags">Tags</a></li>
+            
+                <li><a href="https://avid-rustacean.dev/projects">Projects</a></li>
+            
+                <li><a href="https://github.com/TylerBloom" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+            
+                <li><a href="https://www.linkedin.com/in/tyler-bloom-aba0a4156/" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
+            
+                <li><a href="https://avid-rustacean.dev/rss.xml">RSS</a></li>
+            </ul>
+        </nav>
+    
+    
+        
+    </header>
+    
+
+    <div class="content">
+        
+        <div class="posts">
+                <div class="post on-list">
+                    
+    <h1 class="post-title"><a href="https://avid-rustacean.dev/rffp-0-on-the-rust-learning-curve/">RFFP 0: On the Rust learning curve</a></h1>
+    <div class="post-meta-inline">
+        
+    <span class="post-date">
+            2024-02-28
+        </span>
+
+    </div>
+
+    
+
+
+                    
+        <div class="post-content">
+            <h2 id="tl-dr"><a class="zola-anchor" href="#tl-dr" aria-label="Anchor link for: tl-dr">TL;DR</a></h2>
+<p>This is my introductory post for my Rust education series, Rust from First Principles. I dig into what it means for a language to be "hard to learn" and introduce a framework for reasoning about Rust code to deepen your understanding.</p>
+        </div>
+        <div>
+            <!-- &#xFE0E; -- force text style - some devices render this as emoji -->
+            <a class="read-more button" href="https://avid-rustacean.dev/rffp-0-on-the-rust-learning-curve/">
+                <span class="button__text">Read more</span>&nbsp;
+                <span class="button__icon">&#8617;&#xFE0E;</span>
+            </a>
+        </div>
+    
+
+                </div>
+            
+                <div class="post on-list">
+                    
+    <h1 class="post-title"><a href="https://avid-rustacean.dev/about-this-blog/">About This Blog</a></h1>
+    <div class="post-meta-inline">
+        
+    <span class="post-date">
+            2023-12-17
+        </span>
+
+    </div>
+
+    
+
+
+                    
+        <div class="post-content">
+            <h2 id="tl-dr"><a class="zola-anchor" href="#tl-dr" aria-label="Anchor link for: tl-dr">TL;DR</a></h2>
+<p>As is my want, this blog is a fullstack Rust project. The backend is very straightforward as its job is largely to just serve blog post documents, and it has a fairly straightforward stack: <a href="https://github.com/tokio-rs/axum">Axum</a> + <a href="https://www.mongodb.com/">MongoDB</a> and deployed on <a href="https://www.shuttle.rs/beta">Shuttle</a>. All of the unique parts of the project are in the frontend. There, I combine  <a href="https://github.com/ratatui-org/ratatui">Ratatui</a> and <a href="https://github.com/yewstack/yew">Yew</a> for a texted-based, terminal-esque UI. This presented a series of fun and interesting challenges.</p>
+        </div>
+        <div>
+            <!-- &#xFE0E; -- force text style - some devices render this as emoji -->
+            <a class="read-more button" href="https://avid-rustacean.dev/about-this-blog/">
+                <span class="button__text">Read more</span>&nbsp;
+                <span class="button__icon">&#8617;&#xFE0E;</span>
+            </a>
+        </div>
+    
+
+                </div>
+            <div class="pagination">
+                <div class="pagination__buttons"></div>
+            </div>
+        </div>
+        
+    </div>
+
+    
+    <footer class="footer">
+        <div class="footer__inner">
+                <div class="copyright">
+                        <span>© 
+    2025
+ Tyler Bloom</span>
+                    <span class="copyright-theme">
+                        <span class="copyright-theme-sep">:: </span>
+                        Theme: <a href="https://github.com/pawroman/zola-theme-terminimal/">Terminimal</a> by pawroman
+                    </span>
+                </div>
+            </div>
+    </footer>
+    
+
+</div>
+</body>
+
+</html>

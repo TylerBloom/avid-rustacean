@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+				<head> <link rel="modulepreload" href="/avid-rustacean-frontend.js" crossorigin="anonymous" integrity="sha384-yutIA3BSGmqqJFS2zaEYTIzcRIFNRo3kxdZCkpemLkTrnbg40mUKEEG5NwU4z9N4"><link rel="preload" href="/avid-rustacean-frontend_bg.wasm" crossorigin="anonymous" integrity="sha384-KiOdOmcmw1CNSwu/O52dITzz6jh+k6DZxQGa0quXBygaCIBUsqxQ8RW76rg9QdZ6" as="fetch" type="application/wasm"></head>
+				<meta charset="UTF-8">
+				<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes" />
+				<link href='https://adobe-fonts.github.io/source-code-pro/source-code-pro.css' rel='stylesheet'>
+				<style>
+								body {
+												font-family: 'Source Code Pro', monospace;
+												font-size: 16px;
+												background-color: #3c3836;
+												margin: 0;
+								}
+								span {
+												font-family: 'Source Code Pro', monospace;
+								}
+								pre {
+												font-family: 'Source Code Pro', monospace;
+												margin: 0px;
+								}
+								#the_terminal {
+								font-family: 'Source Code Pro', monospace;
+												width: fit-content;
+												block-size: fit-content;
+												margin: auto;
+								}
+				</style>
+				<body> 
+<script type="module">
+import init, * as bindings from '/avid-rustacean-frontend.js';
+const wasm = await init({ module_or_path: '/avid-rustacean-frontend_bg.wasm' });
+
+
+window.wasmBindings = bindings;
+
+
+dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
+
+</script></body>
+				<script> </script>
+</html>
+

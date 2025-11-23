@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>The Avid Rustacean</title>
+    
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    <meta name="robots" content="noodp"/>
+
+    <link rel="stylesheet" href="https://avid-rustacean.dev/style.css">
+    <link rel="stylesheet" href="https://avid-rustacean.dev/color/orange.css">
+
+        <link rel="stylesheet" href="https://avid-rustacean.dev/color/background_blue.css">
+    
+    <link rel="stylesheet" href="https://avid-rustacean.dev/font-hack-subset.css">
+
+    <meta name="description" content="As is my want, this blog is a fullstack Rust project. The backend is very straightforward as its job is largely to just serve blog post documents, and it has a fairly straightforward stack: [Axum](https://github.com/tokio-rs/axum) + [MongoDB](https://www.mongodb.com/) and deployed on [Shuttle](https://www.shuttle.rs/beta). All of the unique parts of the project are in the frontend. There, I combine  [Ratatui](https://github.com/ratatui-org/ratatui) and [Yew](https://github.com/yewstack/yew) for a texted-based, terminal-esque UI. This presented a series of fun and interesting challenges.
+">
+
+    <meta property="og:description" content="As is my want, this blog is a fullstack Rust project. The backend is very straightforward as its job is largely to just serve blog post documents, and it has a fairly straightforward stack: [Axum](https://github.com/tokio-rs/axum) + [MongoDB](https://www.mongodb.com/) and deployed on [Shuttle](https://www.shuttle.rs/beta). All of the unique parts of the project are in the frontend. There, I combine  [Ratatui](https://github.com/ratatui-org/ratatui) and [Yew](https://github.com/yewstack/yew) for a texted-based, terminal-esque UI. This presented a series of fun and interesting challenges.
+">
+    <meta property="og:title" content="The Avid Rustacean">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://avid-rustacean.dev/about-this-blog/">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:description" content="As is my want, this blog is a fullstack Rust project. The backend is very straightforward as its job is largely to just serve blog post documents, and it has a fairly straightforward stack: [Axum](https://github.com/tokio-rs/axum) + [MongoDB](https://www.mongodb.com/) and deployed on [Shuttle](https://www.shuttle.rs/beta). All of the unique parts of the project are in the frontend. There, I combine  [Ratatui](https://github.com/ratatui-org/ratatui) and [Yew](https://github.com/yewstack/yew) for a texted-based, terminal-esque UI. This presented a series of fun and interesting challenges.
+">
+    <meta name="twitter:title" content="The Avid Rustacean">
+    <meta property="twitter:domain" content="avid-rustacean.dev">
+    <meta property="twitter:url" content="https://avid-rustacean.dev/about-this-blog/">
+
+                <link rel="alternate" type="application/rss+xml" title="The Avid Rustacean RSS Feed" href="https://avid-rustacean.dev/rss.xml" />
+    </head>
+
+<body class="">
+<div class="container">
+    
+    <header class="header">
+        <div class="header__inner">
+            <div class="header__logo">
+                    
+                <a href="https://avid-rustacean.dev" style="text-decoration: none;">
+                    <div class="logo">
+                      
+                            avid-rustacean.dev
+                        
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        
+        <nav class="menu">
+            <ul class="menu__inner">
+                <li><a href="https://avid-rustacean.dev/tui">TUI</a></li>
+            
+                <li class="active"><a href="https://avid-rustacean.dev/about">About</a></li>
+            
+                <li><a href="https://avid-rustacean.dev">Blog</a></li>
+            
+                <li><a href="https://avid-rustacean.dev/tags">Tags</a></li>
+            
+                <li><a href="https://avid-rustacean.dev/projects">Projects</a></li>
+            
+                <li><a href="https://github.com/TylerBloom" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+            
+                <li><a href="https://www.linkedin.com/in/tyler-bloom-aba0a4156/" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
+            
+                <li><a href="https://avid-rustacean.dev/rss.xml">RSS</a></li>
+            </ul>
+        </nav>
+    
+    
+        
+    </header>
+    
+
+    <div class="content">
+        
+    <div class="post">
+        
+    <h1 class="post-title"><a href="https://avid-rustacean.dev/about-this-blog/">About This Blog</a></h1>
+    <div class="post-meta-inline">
+        
+    <span class="post-date">
+            2023-12-17
+        </span>
+
+    </div>
+
+    
+
+        <div class="post-content">
+            <h2 id="tl-dr"><a class="zola-anchor" href="#tl-dr" aria-label="Anchor link for: tl-dr">TL;DR</a></h2>
+<p>As is my want, this blog is a fullstack Rust project. The backend is very straightforward as its job is largely to just serve blog post documents, and it has a fairly straightforward stack: <a href="https://github.com/tokio-rs/axum">Axum</a> + <a href="https://www.mongodb.com/">MongoDB</a> and deployed on <a href="https://www.shuttle.rs/beta">Shuttle</a>. All of the unique parts of the project are in the frontend. There, I combine  <a href="https://github.com/ratatui-org/ratatui">Ratatui</a> and <a href="https://github.com/yewstack/yew">Yew</a> for a texted-based, terminal-esque UI. This presented a series of fun and interesting challenges.</p>
+<span id="continue-reading"></span><h2 id="introduction"><a class="zola-anchor" href="#introduction" aria-label="Anchor link for: introduction">Introduction</a></h2>
+<p>I'm on a mission with this blog. I want to change how people, especially other Rustaceans, think about Rust. I frequently see posts across social media platforms saying some variation of "I want to learn Rust, but I don't know what to build." To which many people recommend terminal applications, low-ish level projects, and web servers, all good and reasonable. But, at the heart of these questions and their responses, I think, is the idea that you should "use Rust as intended". After all, Rust is just a tool, and tools are geared to be used for a particular set of tasks.</p>
+<p>The "intended usecases" of Rust is something that I plan to discuss a fair amount here because it shapes what we are willing to build (or at least willing to encourage get built). In all likelihood, you nor I nor (likely) any one person has a complete conception of what Rust is intended to solve, so I encourage you to explore a bit.</p>
+<p>In my opinion, the ease with which you can render an idea into code (and visa versa) is what makes a language "good" for a particular application, and Rust excels at being expressive and portable. So, let's explore how far this idea can take us. I'll use this blog as a case study.</p>
+<h2 id="the-vision"><a class="zola-anchor" href="#the-vision" aria-label="Anchor link for: the-vision">The Vision</a></h2>
+<p>I've wanted to build a developer blog ever since learning Rust a bit more than 2 years ago. Building a blog is a rather simple task. Resources abound that help you build and deploy a blog. You can even do it directly through GitHub. While this sounds great, the general lack of constraint and my overall dislike of designing UIs made it hard to envision what I wanted for a long time. At least, until inspiration struck me: a TUI!</p>
+<p>I practically live in the terminal and greatly enjoy the text-based aesthetic. My daily environment includes (neo)vim, i3, and a bevy of other terminal-based tool. So when I thought of this, I knew that I was going to have a great time build it. That said, a TUI that runs in your browser is clearly not an "intended usecase" for Rust. But why should I let that stop me? My rough idea at this point was to combine a web UI library with a TUI library and then praying that they could stick together somehow.</p>
+<p>Well, you're reading this right now, so, clearly, it must of worked!</p>
+<h2 id="the-ui-stack"><a class="zola-anchor" href="#the-ui-stack" aria-label="Anchor link for: the-ui-stack">The UI Stack</a></h2>
+<p>To start, I want to note that this is not a how-to or tutorial for any of the crates that I mention. They all have great examples and tutorials. If you feel inspired to build something after reading this (and I hope you do), start with their resources.</p>
+<p>Since this blog is fullstack Rust, I knew that <a href="https://github.com/trunk-rs/trunk">trunk</a> was a must. It auto generates all of the JS bindings your app needs as well as the HTML index file. For development, it can also watch your frontend crate for changes, compile it, and serve it. This makes for a great feedback loop while tweaking your code. Also, it allows you to forgo building a backend while you just trying to get a prototype working.</p>
+<p>For the TUI part of the blog, I knew there were several libraries to help in rendering text-based UIs. I ended choosing <a href="https://github.com/ratatui-org/ratatui">Ratatui</a>  because I knew it was relatively high level but almost nothing else. At that point, I was just hoping that I would be able to hack something together.</p>
+<p>Once the text got rendered, it needed to be converted into HTML and served to the browser window. For this, I decided to use <a href="https://github.com/yewstack/yew">Yew</a> because I had experience with it already.</p>
+<p>With that, I was ready to start hacking around and hoping to come to some kind of revelation.</p>
+<h2 id="webatui"><a class="zola-anchor" href="#webatui" aria-label="Anchor link for: webatui">Webatui</a></h2>
+<p>To say that the browser is not a normal terminal is an understatement. There is no <code>stdout</code>, so I needed a way to take the main renderer in Ratatui, the <code>Terminal</code>, and redirect any <code>stdout</code>-bound data somewhere else.</p>
+<p>As luck would have it, the <code>Terminal</code> is generic over any type that implements their <code>Backend</code> trait. To start, I just wanted to get text in the browser, so I ignored everything that had to do with a cursor. This left me with a fairly short list of things that I needed to implement:</p>
+<pre data-lang="rust" style="background-color:#282828;color:#fdf4c1aa;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-style:italic;color:#928374;">/// A simplified version of the Ratatui `Backend` trait
+</span><span style="color:#fa5c4b;">pub trait </span><span style="color:#8ec07c;">Backend </span><span>{
+</span><span>    </span><span style="color:#fa5c4b;">fn </span><span style="color:#8ec07c;">draw</span><span>&lt;</span><span style="color:#fa5c4b;">&#39;a</span><span>, I&gt;(</span><span style="color:#fe8019;">&amp;</span><span style="color:#fa5c4b;">mut </span><span style="color:#fdf4c1;">self</span><span>, </span><span style="color:#fdf4c1;">content</span><span>: I) -&gt; </span><span style="color:#fabd2f;">Result</span><span>&lt;()&gt;
+</span><span>       </span><span style="color:#fa5c4b;">where</span><span> I: </span><span style="color:#fabd2f;">Iterator</span><span>&lt;Item = (</span><span style="color:#fa5c4b;">u16</span><span>, </span><span style="color:#fa5c4b;">u16</span><span>, </span><span style="color:#fe8019;">&amp;</span><span style="color:#fa5c4b;">&#39;a</span><span> Cell)&gt;;
+</span><span>    fn clear(</span><span style="color:#fe8019;">&amp;</span><span style="color:#fa5c4b;">mut</span><span> self) -&gt; </span><span style="color:#fabd2f;">Result</span><span>&lt;()&gt;;
+</span><span>    fn size(</span><span style="color:#fe8019;">&amp;</span><span>self) -&gt; </span><span style="color:#fabd2f;">Result</span><span>&lt;Rect&gt;;
+</span><span>    fn window_size(</span><span style="color:#fe8019;">&amp;</span><span style="color:#fa5c4b;">mut</span><span> self) -&gt; </span><span style="color:#fabd2f;">Result</span><span>&lt;WindowSize&gt;;
+</span><span>    fn flush(</span><span style="color:#fe8019;">&amp;</span><span style="color:#fa5c4b;">mut</span><span> self) -&gt; </span><span style="color:#fabd2f;">Result</span><span>&lt;()&gt;;
+</span><span>}
+</span></code></pre>
+<p>Most of these methods are fairly simple. The <code>size</code> and <code>window_size</code> methods are easily accessible properties of the browser's window, and the <code>clear</code> method speaks for itself.</p>
+<p>The <code>draw</code> method hints at a fairly intuitive, if naive, understanding of how terminal displays work: "its <em>just</em> a grid of characters". So, let's run with that. The "web terminal" would be internally represented by a grid of characters (actually a grid of characters + formatting info, but you get my point).</p>
+<p>Lastly, the <code>flush</code> method is were all the magic happens. According to the docs, <code>flush</code> is called to, well, flush any buffered contents to the terminal screen. In the browser, this would amount to converting the grid of characters into HTML. The HTML rendering is where Yew comes in.</p>
+<h2 id="all-about-yew"><a class="zola-anchor" href="#all-about-yew" aria-label="Anchor link for: all-about-yew">All About Yew</a></h2>
+<p>Yew is a reactive, Elm-inspired framework. It models pieces of the UI through its <code>Component</code> trait, which has a series of optional methods that but everything we need can be done with just three methods:</p>
+<pre data-lang="rust" style="background-color:#282828;color:#fdf4c1aa;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-style:italic;color:#928374;">/// A simplified version of Yew&#39;s Component trait
+</span><span style="color:#fa5c4b;">pub trait </span><span style="color:#8ec07c;">Component</span><span>: Sized + &#39;static {
+</span><span>    </span><span style="color:#fa5c4b;">type </span><span style="color:#8ec07c;">Message</span><span>: </span><span style="color:#fa5c4b;">&#39;static</span><span>;
+</span><span>
+</span><span>    </span><span style="color:#fa5c4b;">fn </span><span style="color:#8ec07c;">create</span><span>(</span><span style="color:#fdf4c1;">ctx</span><span>: </span><span style="color:#fe8019;">&amp;</span><span>Context&lt;</span><span style="color:#fa5c4b;">Self</span><span>&gt;) -&gt; </span><span style="color:#fa5c4b;">Self</span><span>;
+</span><span>    </span><span style="color:#fa5c4b;">fn </span><span style="color:#8ec07c;">view</span><span>(</span><span style="color:#fe8019;">&amp;</span><span style="color:#fdf4c1;">self</span><span>, </span><span style="color:#fdf4c1;">ctx</span><span>: </span><span style="color:#fe8019;">&amp;</span><span>Context&lt;</span><span style="color:#fa5c4b;">Self</span><span>&gt;) -&gt; Html;
+</span><span>
+</span><span>	</span><span style="font-style:italic;color:#928374;">// Technically &quot;optional&quot;, but we&#39;ll need it.
+</span><span>    </span><span style="color:#fa5c4b;">fn </span><span style="color:#8ec07c;">update</span><span>(</span><span style="color:#fe8019;">&amp;</span><span style="color:#fa5c4b;">mut </span><span style="color:#fdf4c1;">self</span><span>, </span><span style="color:#fdf4c1;">ctx</span><span>: </span><span style="color:#fe8019;">&amp;</span><span>Context&lt;</span><span style="color:#fa5c4b;">Self</span><span>&gt;, </span><span style="color:#fdf4c1;">msg</span><span>: </span><span style="color:#fa5c4b;">Self::</span><span>Message) -&gt; </span><span style="color:#fa5c4b;">bool </span><span>{ </span><span style="color:#fe8019;">... </span><span>}
+</span><span>}
+</span></code></pre>
+<p>Notice the return type of the <code>view</code> method, <code>Html</code>. Yew provides a series of tools for working with virtual HTML nodes (VNodes), namely the <code>html!</code> macro. Now, I generally avoid macros whenever possible (yet another things that I will provide write a whole post about), but <code>html!</code> is something special.</p>
+<p>The <code>html!</code> macro allows you to, more or less, embed HTML in your Rust code, but that's underselling it. It allows you to embed HTML in your Rust code in the same way that the <code>format!</code> macro allows you to embed string literals in your Rust code.</p>
+<pre data-lang="rust" style="background-color:#282828;color:#fdf4c1aa;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-style:italic;color:#928374;">// This produces a header node that can be displayed in your browser!
+</span><span style="color:#fabd2f;">html! </span><span>{
+</span><span>	</span><span style="color:#fe8019;">&lt;</span><span>h1</span><span style="color:#fe8019;">&gt; </span><span>{ </span><span style="color:#fabd2f;">format!</span><span>(</span><span style="color:#b8bb26;">&quot;Hello, </span><span style="color:#fdf4c1;">{}</span><span style="color:#b8bb26;">!&quot;</span><span>, </span><span style="color:#fdf4c1;">self</span><span>.name) } </span><span style="color:#fe8019;">&lt;/</span><span>h1</span><span style="color:#fe8019;">&gt;
+</span><span>}
+</span></code></pre>
+<p>This is how the custom "terminal" backend will render its grid of characters into HTML when <code>flush</code> is called.</p>
+<h2 id="the-first-render"><a class="zola-anchor" href="#the-first-render" aria-label="Anchor link for: the-first-render">The First Render</a></h2>
+<p>With that, I had pieced enough stuff together to take a simple example from Ratatui and hopefully display it in the browser. So far, it has been a fairly simple process, and it looks like we'll have a relatively smooth sailing for now. I <em>just</em> need to: build a backend for the web terminal, put together a simple component for Yew to render, use that component to render a Ratatui example into the web terminal, and display the HTML rendered by the web terminal.</p>
+<p>The initial terminal backend was simple to build. It used a series of <code>&lt;pre&gt;</code> tags to render the lines of text. Once rendered, it caches the HTML for reuse. This means that displaying the HTML just means getting a copy from the cache.</p>
+<p>The component was even easier. To start, it carries no data and never updates. The one issue is that rendering a frame requires a mutable reference to the <code>Terminal</code> but <code>Component::view</code> only provides a shared reference to the component. No problem, this is what <code>RefCell</code> was built for (there are ways around this, but, again, we're prototyping).</p>
+<p>With that, we're done! This works! We've married two random libraries that were certainly not designed to go together. We have a single component that represents the terminal screen, which can be expanded to hold any data that's needed. Yew has support for updating that component and for doing so asynchronously. All that's left is to throw together a backend to store and fetch data, and we're golden, right?</p>
+<h2 id="the-first-snag"><a class="zola-anchor" href="#the-first-snag" aria-label="Anchor link for: the-first-snag">The First Snag</a></h2>
+<p>No. Right now, we only support the barest intersection between terminals and browsers, displaying text. Unfortunately, most people expect to be able to interact with a web app especially with... the mouse.</p>
+<p>Yew was built for the web, so it supports things like attaching callbacks to HTML tags for interactivity. Or even simpler, browser HTML supports hyperlinks. How can we add this kind of interactivity into the rendered HTML if Ratatui doesn't provide that data?</p>
+<p>This stumped me, and I had it in the back of my mind for a couple of days. Then, it occurred to me. The <code>draw</code> method in the <code>Backend</code> takes an iterator over <code>Cell</code>s and their position. A <code>Cell</code> contains a character (technically a string but, for this usecase, a character) and some formatting information:</p>
+<pre data-lang="rust" style="background-color:#282828;color:#fdf4c1aa;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-style:italic;color:#928374;">/// The Ratatui Cell
+</span><span style="color:#fa5c4b;">pub struct </span><span style="color:#8ec07c;">Cell </span><span>{
+</span><span>    </span><span style="color:#fa5c4b;">pub </span><span style="color:#fdf4c1;">symbol</span><span>: String,
+</span><span>    </span><span style="color:#fa5c4b;">pub </span><span style="color:#fdf4c1;">fg</span><span>: Color,
+</span><span>    </span><span style="color:#fa5c4b;">pub </span><span style="color:#fdf4c1;">bg</span><span>: Color,
+</span><span>    </span><span style="color:#fa5c4b;">pub </span><span style="color:#fdf4c1;">underline_color</span><span>: Color,
+</span><span>    </span><span style="color:#fa5c4b;">pub </span><span style="color:#fdf4c1;">modifier</span><span>: Modifier,
+</span><span>    </span><span style="color:#fa5c4b;">pub </span><span style="color:#fdf4c1;">skip</span><span>: </span><span style="color:#fa5c4b;">bool</span><span>,
+</span><span>}
+</span></code></pre>
+<p>Most of this is very straightforward, but if part of the formatting data is unused, then it could be used to mark something as "in need of hydration" (in essence, it needs additional data before being rendered into HTML). From there, an additional step could be added to the rendering process in order to inject hyperlinks, callbacks, and other forms of interactivity.</p>
+<p>Since I had decided to use the <a href="https://github.com/chriskempson/base16">base16</a> approach to theming the blog, most of the color space is completely unused. A certain foreground/background color could be used as this flag, but this restricts the formatting options for interactable elements. Instead, I decided to use a part of the <code>modifier</code> field.</p>
+<p>A <code>Modifier</code> is a bit field that communicates different formatting styles like marking text as needing to blink quickly or be reversed. There are several of these that I have no intention to use, let alone alone add support for. This avoids the clash from before, and exactly which modifier is used as the flag doesn't matter.</p>
+<h2 id="ending-the-drought"><a class="zola-anchor" href="#ending-the-drought" aria-label="Anchor link for: ending-the-drought">Ending the Drought</a></h2>
+<p>With a system for flagging text as "needing hydration", the backend needs to change its rendering logic. It can't go directly from a grid of characters to HTML. Now, it needs to pause the rendering to allow for the component to provide additional data. This falls outside of the bounds of the Ratatui backend model, but that's fine. Ratatui has done its job well. It has rendered widgets into a field of text that will ultimately be displayed.</p>
+<p>Instead of rendering the grid, <code>Backend::flush</code> will instead turn the grid into series of spans that note if it needs hydration. Something like this:</p>
+<pre data-lang="rust" style="background-color:#282828;color:#fdf4c1aa;" class="language-rust "><code class="language-rust" data-lang="rust"><span style="font-style:italic;color:#928374;">/// The spans used in the hydration process
+</span><span style="color:#fa5c4b;">enum </span><span style="color:#8ec07c;">TermSpan </span><span>{
+</span><span>    </span><span style="font-style:italic;color:#928374;">/// The data is plain data and will be rendered in an HTML span tag.
+</span><span>    Plain((Color, Color), Modifier, </span><span style="color:#fabd2f;">String</span><span>),
+</span><span>    </span><span style="font-style:italic;color:#928374;">/// The data might need to contain additional data, such as a callback.
+</span><span>    Dehydrated(DehydratedSpan),
+</span><span>}
+</span><span>
+</span><span style="font-style:italic;color:#928374;">/// A span that might need additional data such as a callback or hyperlink
+</span><span>#[</span><span style="color:#fdf4c1;">derive</span><span>(Debug, Default)]
+</span><span style="color:#fa5c4b;">pub struct </span><span style="color:#8ec07c;">DehydratedSpan </span><span>{
+</span><span>    </span><span style="color:#fdf4c1;">style</span><span>: (Color, Color),
+</span><span>    </span><span style="color:#fdf4c1;">mods</span><span>: Modifier,
+</span><span>    </span><span style="color:#fdf4c1;">text</span><span>: String,
+</span><span>    </span><span style="font-style:italic;color:#928374;">// The container for the interactivity data, like the href for a hyperlink
+</span><span>    </span><span style="color:#fdf4c1;">interaction</span><span>: Interaction,
+</span><span>}
+</span></code></pre>
+<p>After the component has rendered everything via the Ratatui terminal renderer, it can call a method to hydrate those spans. This hydration will yield each dehydrated span to the component one-by-one and then render all the spans into HTML. The HTML is then accessed the same way as before.</p>
+<p>And with that, we really do support everything we need to! You can click around the UI, change tabs, read blog posts, and use hyperlinks. Huzzah!</p>
+<h2 id="backend-basics"><a class="zola-anchor" href="#backend-basics" aria-label="Anchor link for: backend-basics">Backend Basics</a></h2>
+<p>Ok, we're not quite done yet...</p>
+<p>There still needs to be a place were we can fetch data from. A simple backend will suffice for this. Throw in a database for persistence, and it's mostly done. The backend just needs to support basic CRUD operations for the different types of content it holds (blog post, project summaries, homepage, etc).</p>
+<p>But what is being posted? I write my notes, and by extension these posts, in <a href="https://obsidian.md/">Obsidian</a>, which is just a bunch of markdown files. Ideally, I could give the backend a markdown document, and it would serve those to the frontend. But, displaying rendered markdown in a terminal-friendly way requires parsing that markdown. Also, what about syntax highlighting? What kind of dev blog doesn't have syntax highlighted code snippets??</p>
+<p>Ok, so maybe the backend needs to do more than <em>just</em> store and serve data. Luckily, there are already libraries for parsing markdown and for syntax highlighting, <a href="https://github.com/wooorm/markdown-rs">markdown-rs</a> and <a href="https://github.com/trishume/syntect">syntect</a> respectively. Not everything in markdown can be rendered into an ASCII display, so the backend parses out only the supported parts from the markdown syntax tree. Any code blocks in that markdown are then parsed, highlighted, and stored in a collection of spans. This pre-parsed minimal markdown AST is what is then served to the frontend when it fetches a blog post or the like. That markdown is then turned into Ratatui widgets and eventually displayed as the text that you are reading.</p>
+<h2 id="wrap-up"><a class="zola-anchor" href="#wrap-up" aria-label="Anchor link for: wrap-up">Wrap Up</a></h2>
+<p>When I hear people talk about what Rust is built for, this kind of project is not discussed. This is understandable. This is an odd, somewhat esoteric way of using the language... but should it be?</p>
+<p>I'm not advocating that people build other terminal-esque blogs (how else would I be unique?), but I do believe that you should chase your bless. While the crates that I used to build this were not intended to be used together, they come together relatively easily and quickly (about a week), but, more importantly, I had a blast while doing it.</p>
+<p>Rust, far more than any language I've used, is a joy to work with, and I think developers should get to use things that bring them joy. You can bring Rust to almost any domain, and that's where I think you should write Rust code.</p>
+<p>Well, its been a pleasure. Same time next time?</p>
+
+        </div>
+
+        
+            <div class="pagination">
+                <div class="pagination__title">
+                    <span class="pagination__title-h">Thanks for reading! Read other posts?</span>
+                    <hr />
+                </div>
+                <div class="pagination__buttons">
+                    
+                        <span class="button next">
+                            <a href="https://avid-rustacean.dev/rffp-0-on-the-rust-learning-curve/">
+                                <span class="button__text">RFFP 0: On the Rust learning curve</span>&nbsp;
+                                <span class="button__icon">→</span>
+                            </a>
+                        </span>
+                    </div>
+            </div>
+        
+    </div>
+
+    </div>
+
+    
+    <footer class="footer">
+        <div class="footer__inner">
+                <div class="copyright">
+                        <span>© 
+    2025
+ Tyler Bloom</span>
+                    <span class="copyright-theme">
+                        <span class="copyright-theme-sep">:: </span>
+                        Theme: <a href="https://github.com/pawroman/zola-theme-terminimal/">Terminimal</a> by pawroman
+                    </span>
+                </div>
+            </div>
+    </footer>
+    
+
+</div>
+</body>
+
+</html>

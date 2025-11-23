@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0">
+    <channel>
+      <title>The Avid Rustacean</title>
+      <link>https://avid-rustacean.dev</link>
+      <description></description>
+      <generator>Zola</generator>
+      <language>en</language>
+      <atom:link href="https://avid-rustacean.dev/rss.xml" rel="self" type="application/rss+xml"/>
+      <lastBuildDate>Wed, 28 Feb 2024 00:00:00 +0000</lastBuildDate>
+      <item>
+          <title>RFFP 0: On the Rust learning curve</title>
+          <pubDate>Wed, 28 Feb 2024 00:00:00 +0000</pubDate>
+          <author>Tyler Bloom</author>
+          <link>https://avid-rustacean.dev/rffp-0-on-the-rust-learning-curve/</link>
+          <guid>https://avid-rustacean.dev/rffp-0-on-the-rust-learning-curve/</guid>
+          <description xml:base="https://avid-rustacean.dev/rffp-0-on-the-rust-learning-curve/">&lt;h2 id=&quot;tl-dr&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#tl-dr&quot; aria-label=&quot;Anchor link for: tl-dr&quot;&gt;TL;DR&lt;&#x2F;a&gt;&lt;&#x2F;h2&gt;
+&lt;p&gt;This is my introductory post for my Rust education series, Rust from First Principles. I dig into what it means for a language to be &quot;hard to learn&quot; and introduce a framework for reasoning about Rust code to deepen your understanding.&lt;&#x2F;p&gt;</description>
+      </item>
+      <item>
+          <title>About This Blog</title>
+          <pubDate>Sun, 17 Dec 2023 00:00:00 +0000</pubDate>
+          <author>Tyler Bloom</author>
+          <link>https://avid-rustacean.dev/about-this-blog/</link>
+          <guid>https://avid-rustacean.dev/about-this-blog/</guid>
+          <description xml:base="https://avid-rustacean.dev/about-this-blog/">&lt;h2 id=&quot;tl-dr&quot;&gt;&lt;a class=&quot;zola-anchor&quot; href=&quot;#tl-dr&quot; aria-label=&quot;Anchor link for: tl-dr&quot;&gt;TL;DR&lt;&#x2F;a&gt;&lt;&#x2F;h2&gt;
+&lt;p&gt;As is my want, this blog is a fullstack Rust project. The backend is very straightforward as its job is largely to just serve blog post documents, and it has a fairly straightforward stack: &lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;tokio-rs&#x2F;axum&quot;&gt;Axum&lt;&#x2F;a&gt; + &lt;a href=&quot;https:&#x2F;&#x2F;www.mongodb.com&#x2F;&quot;&gt;MongoDB&lt;&#x2F;a&gt; and deployed on &lt;a href=&quot;https:&#x2F;&#x2F;www.shuttle.rs&#x2F;beta&quot;&gt;Shuttle&lt;&#x2F;a&gt;. All of the unique parts of the project are in the frontend. There, I combine  &lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;ratatui-org&#x2F;ratatui&quot;&gt;Ratatui&lt;&#x2F;a&gt; and &lt;a href=&quot;https:&#x2F;&#x2F;github.com&#x2F;yewstack&#x2F;yew&quot;&gt;Yew&lt;&#x2F;a&gt; for a texted-based, terminal-esque UI. This presented a series of fun and interesting challenges.&lt;&#x2F;p&gt;</description>
+      </item>
+      <item>
+          <title>About Me</title>
+          <pubDate>Sun, 17 Dec 2023 00:00:00 +0000</pubDate>
+          <author>Tyler Bloom</author>
+          <link>https://avid-rustacean.dev/about/</link>
+          <guid>https://avid-rustacean.dev/about/</guid>
+          <description xml:base="https://avid-rustacean.dev/about/">&lt;h1 id=&quot;introduction&quot;&gt;Introduction&lt;&#x2F;h1&gt;
+&lt;p&gt;Hi! I&#x27;m Tyler Bloom, and welcome to my blog. I&#x27;m a Rust developer, and that&#x27;s what I&#x27;ll spend most of my time talking about on here, though I might write about anything. I started writing Rust during my final year of grad school (around Oct. 2021), and I haven&#x27;t looked back. Since then, nearly all of the code that I write both personally and professional is Rust.&lt;&#x2F;p&gt;
+&lt;h1 id=&quot;what-you-ll-find-here&quot;&gt;What you&#x27;ll find here&lt;&#x2F;h1&gt;
+&lt;p&gt;I fundamentally believe in the philosophy of open information, including open source. That is my &lt;em&gt;raison d&#x27;etre&lt;&#x2F;em&gt;, so everything you read here starts with a desire share what I&#x27;ve learned, what I&#x27;m thinking about, what I&#x27;ve built, and what I can teach. These are all interrelated, so a blog post that emphasis one of those will be largely motivated by the other.&lt;&#x2F;p&gt;
+&lt;p&gt;A particularly favorite topic of mine is building an intuition for systems based on the rules of Rust. In my main educational series, Rust from First Principle, I walk through different libraries and help construct working mental models using a basic idea and several API signatures.&lt;&#x2F;p&gt;
+&lt;h1 id=&quot;closing&quot;&gt;Closing&lt;&#x2F;h1&gt;
+&lt;p&gt;I hope you enjoy your time here. If you want to contact me, the easiest way is via email (linked below) or on Discord. If you&#x27;d like to see what I am&#x2F;have worked on, check out the projects tab or my GitHub.&lt;&#x2F;p&gt;
+</description>
+      </item>
+    </channel>
+</rss>
