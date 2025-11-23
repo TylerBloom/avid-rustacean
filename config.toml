@@ -19,7 +19,8 @@ taxonomies = [
 [markdown]
 # Whether to do syntax highlighting
 # Theme can be customised by setting the `highlight_theme` variable to a theme supported by Zola
-highlight_theme = "gruvbox-dark"
+# highlight_theme = "gruvbox-dark"
+highlight_theme = "ayu-mirage"
 highlight_code = true
 render_emoji = true
 
