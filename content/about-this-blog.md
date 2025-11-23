@@ -7,14 +7,13 @@ As is my want, this blog is a fullstack Rust project. The backend is very straig
 '''
 
 [extra]
-show_only_description = true
-
-[taxonomies]
-tags = [ "announcement" ]
+show_only_description = false
 +++
 
 ## TL;DR
 As is my want, this blog is a fullstack Rust project. The backend is very straightforward as its job is largely to just serve blog post documents, and it has a fairly straightforward stack: [Axum](https://github.com/tokio-rs/axum) + [MongoDB](https://www.mongodb.com/) and deployed on [Shuttle](https://www.shuttle.rs/beta). All of the unique parts of the project are in the frontend. There, I combine  [Ratatui](https://github.com/ratatui-org/ratatui) and [Yew](https://github.com/yewstack/yew) for a texted-based, terminal-esque UI. This presented a series of fun and interesting challenges.
+
+<!-- more -->
 
 ## Introduction
 I'm on a mission with this blog. I want to change how people, especially other Rustaceans, think about Rust. I frequently see posts across social media platforms saying some variation of "I want to learn Rust, but I don't know what to build." To which many people recommend terminal applications, low-ish level projects, and web servers, all good and reasonable. But, at the heart of these questions and their responses, I think, is the idea that you should "use Rust as intended". After all, Rust is just a tool, and tools are geared to be used for a particular set of tasks.

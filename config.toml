@@ -19,15 +19,23 @@ taxonomies = [
 [markdown]
 # Whether to do syntax highlighting
 # Theme can be customised by setting the `highlight_theme` variable to a theme supported by Zola
+highlight_theme = "gruvbox-dark"
 highlight_code = true
+render_emoji = true
 
 [extra]
+accent_color = "orange"
+# background_color = "auto"
+
+logo_text = "avid-rustacean.dev"
+author = "Tyler Bloom"
 menu_items = [
     { name = "TUI", url = "$BASE_URL/tui" },
-    { name = "about", url = "$BASE_URL/about" },
-    { name = "blog", url = "$BASE_URL" },
-    { name = "tags", url = "$BASE_URL/tags" },
-    { name = "projects", url = "$BASE_URL/projects" },
-    { name = "github", url = "https://github.com/TylerBloom", newtab = true },
-    { name = "rss", url = "$BASE_URL/rss.xml" },
+    { name = "About", url = "$BASE_URL/about" },
+    { name = "Blog", url = "$BASE_URL" },
+    { name = "Tags", url = "$BASE_URL/tags" },
+    { name = "Projects", url = "$BASE_URL/projects" },
+    { name = "GitHub", url = "https://github.com/TylerBloom", newtab = true },
+    { name = "LinkedIn", url = "https://www.linkedin.com/in/tyler-bloom-aba0a4156/", newtab = true },
+    { name = "RSS", url = "$BASE_URL/rss.xml" },
 ]
