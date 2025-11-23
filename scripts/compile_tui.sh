@@ -15,6 +15,9 @@ mkdir static/tui/projects
 mkdir static/tui/blog
 mkdir static/tui/posts
 
+# Adds CNAME to static because this project uses a custom domain name
+cp CNAME static/
+
 pushd crates
 
 # Compile the web TUI frontend
