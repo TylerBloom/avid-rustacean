@@ -98,6 +98,8 @@ fn main() {
                 .get("description")
                 .unwrap()
                 .to_string()
+                .replace(r#"""""#, "")
+                .replace(r#"'''"#, "")
                 .parse()
                 .unwrap(),
             create_on,

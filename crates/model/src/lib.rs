@@ -13,6 +13,8 @@
     clippy::all
 )]
 
+use std::error::Error;
+
 pub use chrono::Utc;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
@@ -48,8 +50,7 @@ pub fn split_markdown(file: &str) -> (String, String) {
 #[derive(Debug, Default, PartialEq, Eq, Clone, Serialize, Deserialize, Hash)]
 pub struct Markdown(pub Vec<MdNode>);
 
-#[derive(Debug)]
-pub struct MdError;
+pub type MdError = Box<dyn Error>;
 
 /// The supported markdown nodes.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Hash)]

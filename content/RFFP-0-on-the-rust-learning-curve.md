@@ -7,10 +7,13 @@ This is my introductory post for my Rust education series, Rust from First Princ
 '''
 
 [extra]
-show_only_description = true
+show_only_description = false
 +++
 ## TL;DR
 This is my introductory post for my Rust education series, Rust from First Principles. I dig into what it means for a language to be "hard to learn" and introduce a framework for reasoning about Rust code to deepen your understanding.
+
+<!-- more -->
+
 ## Intro
 Rust is generally considered a hard language to learn. This is true, to a degree. There are certainly many challenges to learning the language because it forces you to solve problems that you would normally put off until testing (or see a bug report for). Still, I think the label of "hard language to learn" misses a lot of context and is only true for certain definitions of what it means to "learn" something.
 

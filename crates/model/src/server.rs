@@ -24,9 +24,7 @@ impl FromStr for Markdown {
             Ok(())
         }
 
-        let Ok(ast) = markdown::to_mdast(s, &ParseOptions::gfm()) else {
-            return Err(MdError);
-        };
+        let ast = markdown::to_mdast(s, &ParseOptions::gfm()).map_err(|e| e.to_string())?;
         let mut digest = Vec::new();
         process(ast, &mut digest)?;
         Ok(Self(digest))
@@ -69,7 +67,8 @@ impl TryFrom<&Node> for MdNode {
                 ))
             }
             Node::Code(code) => parse_code(&code.value).map(Self::Code),
-            _ => Err(MdError),
+            Node::Html(_) => Ok(Self::Paragraph(Vec::new())),
+            node => Err(MdError::from(format!("Unsupported node type: {node:?}"))),
         }
     }
 }
@@ -98,9 +97,7 @@ fn parse_code(code: &str) -> Result<ParsedCode, MdError> {
     let mut hl = HighlightLines::new(syntaxes.find_syntax_by_name("Rust").unwrap(), &theme);
     let mut digest = Vec::new();
     for line in code.split_inclusive('\n') {
-        let Ok(parsed) = hl.highlight_line(line, &syntaxes) else {
-            return Err(MdError);
-        };
+        let parsed = hl.highlight_line(line, &syntaxes)?;
         for (style, item) in parsed {
             digest.push((item.replace('\t', "  "), convert_style(style)?));
         }
@@ -121,10 +118,10 @@ fn convert_style(style: Style) -> Result<(GruvboxColor, GruvboxColor), MdError> 
     {
         GruvboxColor::orange()
     } else {
-        return Err(MdError);
+        return Err("Style error".into());
     };
     let Ok(bg) = style.background.try_into() else {
-        return Err(MdError);
+        return Err("Style error".into());
     };
     Ok((fg, bg))
 }

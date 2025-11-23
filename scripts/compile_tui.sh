@@ -1,15 +1,19 @@
 #!/usr/bin/env bash
 
+set -e
+
 # Assembles all of the assets for the web TUI and puts them in the static directory for zola
 
 # First, check to see if the static directory exists and create the structure if not
-if [ ! -d "$DIRECTORY" ]; then
-				mkdir static
-				mkdir static/tui
-				mkdir static/tui/projects
-				mkdir static/tui/blog
-				mkdir static/tui/posts
+if [ -d "static" ]; then
+				rm -r static
 fi
+
+mkdir static
+mkdir static/tui
+mkdir static/tui/projects
+mkdir static/tui/blog
+mkdir static/tui/posts
 
 pushd crates
 
