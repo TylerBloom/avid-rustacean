@@ -31,10 +31,10 @@ fn main() {
     // Generate badge json
     let json = r#"
     {
-        schemaVersion: 1,
-        label: "Deployment",
-        message: "Active",
-        color: "8ec07c",
+        "schemaVersion": 1,
+        "label": "Deployment",
+        "message": "Active",
+        "color": "8ec07c"
     }"#;
     assets_path.push("badge.json");
     std::fs::write(&assets_path, json).unwrap();
