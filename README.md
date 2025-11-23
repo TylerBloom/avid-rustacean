@@ -1,5 +1,5 @@
 ![GitHub Workflows](https://github.com/TylerBloom/avid-rustacean/actions/workflows/ci.yml/badge.svg)
-![Deployment](https://img.shields.io/endpoint?url=https%3A%2F%2Favid-rustacean.shuttleapp.rs%2Fapi%2Fv1%2Fbadge&label=Deployment)
+![Deployment](https://img.shields.io/endpoint?url=https%3A%2F%2Favid-rustacean.dev%2Fbadge&label=Deployment)
 ![Maintenance](https://img.shields.io/badge/Maintenance-Actively%20Developed-brightgreen.svg)
 
 ## The Avid Rustacean
