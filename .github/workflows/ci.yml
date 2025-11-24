@@ -19,7 +19,7 @@ jobs:
         with:
           rust-version: nightly
           components: rustfmt
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: cargo fmt --check --all
   tests:
     name: Build and Testing Checks
@@ -37,7 +37,7 @@ jobs:
         with:
           version: 'latest'
       - run: pwd >> $GITHUB_PATH
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: cargo build --all --verbose
       - run: cargo test --package avid-rustacean-model --verbose
       - run: cargo test --package avid-rustacean-builder --verbose
@@ -54,7 +54,7 @@ jobs:
           rust-version: stable
           components: rustfmt
           targets: wasm32-unknown-unknown
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Fetch Trunk
         uses: jetli/trunk-action@v0.5.1
         with:
