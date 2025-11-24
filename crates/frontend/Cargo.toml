@@ -18,7 +18,7 @@ ratatui = { version = "=0.25", default-features = false, features = ["all-widget
 yew = { version = "0.21", features = ["csr"] }
 yew-router = { version = "0.18" }
 # TODO: This does not need to be full.
-derive_more = { version = "1.0", features = ["full"] }
+derive_more = { version = "2.0", features = ["full"] }
 url-escape = "0.1.1"
 serde = { version = "1.0.204", features = ["derive"] }
 gloo-net = { version = "0.6", features = ["json", "http"] }
